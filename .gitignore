@@ -4,6 +4,7 @@ node_modules
 truffle-config.js
 package.json
 package-lock.json
+contracts/.DS_Store
 
 # Logs
 logs
