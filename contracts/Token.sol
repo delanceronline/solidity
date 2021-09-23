@@ -118,6 +118,17 @@ contract Token is Context, IBEP20, Ownable {
 
   }
 
+  function updatePoolInflow(uint inflowAmount) external orderEscrowOnly 
+  {
+    uint256 available = (inflowAmount.mul(scaling)).add(scaledRemainder);
+
+    if(circulationTotal > 0)
+    {
+      scaledDividendPerToken = scaledDividendPerToken.add(available.div(circulationTotal));
+      scaledRemainder = available.mod(circulationTotal);
+    }
+  }
+
   /**
    * @dev Moves tokens `amount` from `sender` to `recipient`.
    *
@@ -150,17 +161,6 @@ contract Token is Context, IBEP20, Ownable {
       emit Transfer(sender, recipient, amount);
     }
 
-  }
-
-  function updatePoolInflow(uint inflowAmount) external orderEscrowOnly 
-  {
-    uint256 available = (inflowAmount.mul(scaling)).add(scaledRemainder);
-
-    if(circulationTotal > 0)
-    {
-      scaledDividendPerToken = scaledDividendPerToken.add(available.div(circulationTotal));
-      scaledRemainder = available.mod(circulationTotal);
-    }
   }
 
   /**

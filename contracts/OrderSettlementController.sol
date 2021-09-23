@@ -10,6 +10,14 @@ import './Token.sol';
 import './TokenEscrow.sol';
 import './OrderEscrow.sol';
 
+/*
+------------------------------------------------------------------------------------
+
+This is the controller class for the order settlement (setup and finalization) which mainly gets access to the order model.
+
+------------------------------------------------------------------------------------
+*/
+
 contract OrderSettlementController {
   
   using SafeMath for uint256;
@@ -21,16 +29,17 @@ contract OrderSettlementController {
     modelAddress = addr;
   }
 
-  function finalizeDealWithoutDispute(uint i) external
+  // called by seller only, to finalize a shipped deal after dispute period expired
+  function finalizeDealWithoutDispute(uint localDealIndex) external
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
-    require(i < orderModel.getTotalDealCount(), 'deal count is out of bound.');
+    require(localDealIndex < orderModel.getTotalDealCount(), 'deal count is out of bound.');
 
-    uint dealIndex = orderModel.getDealIndex(msg.sender, i);
+    uint dealIndex = orderModel.getDealIndex(msg.sender, localDealIndex);
 
     // !deal.flags[2] --- not finalized
-    // tx.origin == deal.roles[1] --- Only seller should call this function after safe period.
+    // msg.sender == deal.roles[1] --- Only seller should call this function after safe period.
     // block.number.sub(deal.numericalData[1]) > deal.numericalData[4] --- safe period expired
     // !deal.flags[5] || (deal.flags[6] && !deal.flags[7]) --- Not under dispute or resolved by moderator to sellerz favour
     require(!orderModel.getDealFlag(dealIndex, 2) && msg.sender == orderModel.getDealRole(dealIndex, 1) && block.number.sub(orderModel.getDealNumericalData(dealIndex, 1)) > orderModel.getDealNumericalData(dealIndex, 4) && (!orderModel.getDealFlag(dealIndex, 5) || (orderModel.getDealFlag(dealIndex, 6) && !orderModel.getDealFlag(dealIndex, 7))));
@@ -44,14 +53,15 @@ contract OrderSettlementController {
     releaseFunds(orderModel.getDealRole(dealIndex, 1), orderModel.getDealRole(dealIndex, 2), orderModel.getDealNumericalData(dealIndex, 8), orderModel.getDealNumericalData(dealIndex, 7));
   }
 
-  function finalizeDeal(uint i, uint8 rating, bytes calldata review) external
+  // called by buyer only, to finalize a shipped deal
+  function finalizeDeal(uint localDealIndex, uint8 rating, bytes calldata review) external
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
     // deal count is out of bound AND rating score should be greater than zero.
-    require(i < orderModel.getTotalDealCount() && rating > 0);
+    require(localDealIndex < orderModel.getTotalDealCount() && rating > 0);
 
-    uint dealIndex = orderModel.getDealIndex(msg.sender, i);
+    uint dealIndex = orderModel.getDealIndex(msg.sender, localDealIndex);
 
     // !deal.flags[2] && !deal.flags[5] && deal.flags[1] --- Not finalized AND not under dispute AND already shipped
     // tx.origin == deal.roles[0] --- Only buyer can finalize a deal within safe period.
@@ -69,6 +79,7 @@ contract OrderSettlementController {
     releaseFunds(orderModel.getDealRole(dealIndex, 1), orderModel.getDealRole(dealIndex, 2), orderModel.getDealNumericalData(dealIndex, 8), orderModel.getDealNumericalData(dealIndex, 7));
   }
 
+  // an internal function, to release funds to seller, referee (if any) and marketplace's dividend pool, during finalization
   function releaseFunds(address sellerAddress, address refereeAddress, uint dealMarketCommission, uint dealTotalAmount) internal
   {
     // pay the seller
@@ -112,7 +123,7 @@ contract OrderSettlementController {
     OrderEscrow(Model(modelAddress).orderEscrowAddress()).transferStabeCoin(Model(modelAddress).dividendPoolAddress(), tokenPoolAmount);
   }
 
-  // add a deal to public escrow
+  // setup a deal, called by buyer only
   function setupDeal(address payable seller, uint igi, string calldata buyerNote, uint quantity, address referee, address moderator, uint totalUSD) external
   {
     ProductController productController = ProductController(Model(modelAddress).productControllerAddress());
@@ -127,6 +138,7 @@ contract OrderSettlementController {
     stableCoin.transferFrom(msg.sender, Model(modelAddress).orderEscrowAddress(), totalUSD);
   }
 
+  // an internal function, adding a deal to order model
   function addDeal(address seller, uint igi, string memory buyerNote, uint quantity, address referee, address moderator, uint totalUSD) internal
   {
     require(igi > 0, "Item global index is invalid.");
@@ -168,7 +180,7 @@ contract OrderSettlementController {
     EventModel(Model(modelAddress).eventModelAddress()).onDealCreatedEmit(dealIndex, seller, tx.origin, buyerNote);    
   }
 
-  // add a direct deal to ppublic escrow
+  // setup a direct deal (without deal dispute option), called by buyer
   function setupDirectDeal(address seller, uint igi, string calldata buyerNote, uint quantity, uint totalUSD) external
   {
     ProductController productController = ProductController(Model(modelAddress).productControllerAddress());
@@ -183,6 +195,7 @@ contract OrderSettlementController {
     stableCoin.transferFrom(msg.sender, Model(modelAddress).orderEscrowAddress(), productController.getItemPriceUSD(igi - 1));
   }
 
+  // an internal function to add a deal to order model
   function addDirectDeal(address seller, uint igi, string memory buyerNote, uint quantity, uint totalUSD) internal
   {
     require(igi > 0, "Item global index is invalid.");
@@ -216,8 +229,5 @@ contract OrderSettlementController {
 
     EventModel(Model(modelAddress).eventModelAddress()).onDealCreatedEmit(dealIndex, seller, tx.origin, buyerNote);
   }
-
-  // ---------------------------------------
-  // ---------------------------------------    
   
 }

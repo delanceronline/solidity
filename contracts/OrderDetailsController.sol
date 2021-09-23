@@ -6,12 +6,21 @@ import './ProductController.sol';
 import './MarketplaceController.sol';
 import './OrderModel.sol';
 
+/*
+------------------------------------------------------------------------------------
+
+This is the controller class for the order details access which mainly gets access to the order model.
+
+------------------------------------------------------------------------------------
+*/
+
 contract OrderDetailsController {
   
   using SafeMath for uint256;
 
   address public modelAddress;
 
+  // Administrator only modifier
   modifier adminOnly() {
 
     require(Model(modelAddress).isAdmin(msg.sender), "Admin access only in order details controller");
@@ -28,6 +37,7 @@ contract OrderDetailsController {
   // admin only functions
   // ---------------------------------------
 
+  // set if a deal can be extended to be finalized a bit later
   function setDealExtensionAllowed(uint did, bool flag) external adminOnly
   {
     OrderModel model = OrderModel(Model(modelAddress).orderModelAddress());
@@ -36,24 +46,27 @@ contract OrderDetailsController {
     model.setDealFlag(did, 0, flag);
   }
 
+  // set if direct deal rating is allowed
   function setDirectDealRatingAllowed(bool isAllowed) external adminOnly
   {
     OrderModel(Model(modelAddress).orderModelAddress()).setDirectDealRatingAllowed(isAllowed);
   }
 
+  // get number of deals of a user (the caller)
   function numOfDeals() external view returns (uint)
   {
-    return OrderModel(Model(modelAddress).orderModelAddress()).getDealCount(tx.origin);
+    return OrderModel(Model(modelAddress).orderModelAddress()).getDealCount(msg.sender);
   }
 
-  function getDealBasicDetails(uint i) external view returns (uint, uint, uint, uint, uint, uint)
+  // get basic details of a deal
+  function getDealBasicDetails(uint localIndex) external view returns (uint, uint, uint, uint, uint, uint)
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
-    // i < dealOwners[tx.origin].length --- deal count is out of bound.
-    require(i < orderModel.getDealCount(tx.origin));
+    // localIndex < dealOwners[msg.sender].length --- deal count is out of bound.
+    require(localIndex < orderModel.getDealCount(msg.sender));
 
-    uint dealIndex = orderModel.getDealIndex(tx.origin, i);
+    uint dealIndex = orderModel.getDealIndex(msg.sender, localIndex);
 
     return (
       orderModel.getDealNumericalData(dealIndex, 6),
@@ -65,6 +78,7 @@ contract OrderDetailsController {
     );
   }
 
+  // get basic details of a deal by global deal index
   function getDealBasicDetailsByDealIndex(uint dealIndex) external view returns (uint, uint, uint, uint, uint, uint)
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
@@ -81,113 +95,111 @@ contract OrderDetailsController {
     );
   }
 
-  function getDealIndex(uint i) external view returns (uint)
+  // get global deal index from a seller with local deal index given
+  function getDealIndex(uint localIndex) external view returns (uint)
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
-    // i < dealOwners[tx.origin].length --- deal count is out of bound.
-    require(i < orderModel.getDealCount(tx.origin));
+    // localIndex < dealOwners[tx.origin].length --- deal count is out of bound.
+    require(localIndex < orderModel.getDealCount(msg.sender));
 
-    return orderModel.getDealIndex(tx.origin, i);
+    return orderModel.getDealIndex(msg.sender, localIndex);
   }
 
-  function getDealGlobalItemIndex(uint i) external view returns (uint)
+  // get global item index of a deal of a seller
+  function getDealGlobalItemIndex(uint localIndex) external view returns (uint)
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
-    // i < dealOwners[tx.origin].length --- deal count is out of bound
-    require(i < orderModel.getDealCount(tx.origin));
+    // localIndex < dealOwners[msg.sender].length --- deal count is out of bound
+    require(localIndex < orderModel.getDealCount(msg.sender));
 
-    uint dealIndex = orderModel.getDealIndex(tx.origin, i);
+    uint dealIndex = orderModel.getDealIndex(msg.sender, localIndex);
     return orderModel.getDealNumericalData(dealIndex, 5);
   }
 
-  function readFlag(uint i, uint8 flagIndex) external view returns (bool)
+  // get flag value of a deal of a seller
+  function readFlag(uint localIndex, uint8 flagIndex) external view returns (bool)
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
-    // i < dealOwners[tx.origin].length --- deal count is out of bound.
+    // localIndex < dealOwners[msg.sender].length --- deal count is out of bound.
     // flagIndex < 11 --- flag index is out of bound.
-    require(i < orderModel.getDealCount(tx.origin) && flagIndex < 11);
+    require(localIndex < orderModel.getDealCount(msg.sender) && flagIndex < 11);
 
-    uint dealIndex = orderModel.getDealIndex(tx.origin, i);
+    uint dealIndex = orderModel.getDealIndex(msg.sender, localIndex);
     return orderModel.getDealFlag(dealIndex, flagIndex);
   }
 
-  function isDealSeller(uint i) external view returns (bool)
+  // check if the caller is the seller of a deal
+  function isDealSeller(uint localIndex) external view returns (bool)
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
-    // i < dealOwners[tx.origin].length --- deal count is out of bound.
-    require(i < orderModel.getDealCount(tx.origin));
+    // localIndex < dealOwners[msg.sender].length --- deal count is out of bound.
+    require(localIndex < orderModel.getDealCount(msg.sender));
 
-    uint dealIndex = orderModel.getDealIndex(tx.origin, i);
-    return orderModel.getDealRole(dealIndex, 1) == tx.origin;
+    uint dealIndex = orderModel.getDealIndex(msg.sender, localIndex);
+    return orderModel.getDealRole(dealIndex, 1) == msg.sender;
   }
 
-  function getDealSeller(uint i) external view returns (address)
+  // get the seller address of a deal
+  function getDealSeller(uint localIndex) external view returns (address)
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
-    // i < dealOwners[tx.origin].length --- deal count is out of bound.
-    require(i < orderModel.getDealCount(tx.origin));
+    // localIndex < dealOwners[msg.sender].length --- deal count is out of bound.
+    require(localIndex < orderModel.getDealCount(msg.sender));
 
-    uint dealIndex = orderModel.getDealIndex(tx.origin, i);
+    uint dealIndex = orderModel.getDealIndex(msg.sender, localIndex);
     return orderModel.getDealRole(dealIndex, 1);
   }
 
-  function isDealBuyer(uint i) external view returns (bool)
+  // check if the caller is the buyer of a deal
+  function isDealBuyer(uint localIndex) external view returns (bool)
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
-    // i < dealOwners[tx.origin].length --- deal count is out of bound.
-    require(i < orderModel.getDealCount(tx.origin));
+    // localIndex < dealOwners[msg.sender].length --- deal count is out of bound.
+    require(localIndex < orderModel.getDealCount(msg.sender));
 
-    uint dealIndex = orderModel.getDealIndex(tx.origin, i);
-    return orderModel.getDealRole(dealIndex, 0) == tx.origin;
+    uint dealIndex = orderModel.getDealIndex(msg.sender, localIndex);
+    return orderModel.getDealRole(dealIndex, 0) == msg.sender;
   }
 
-  function getDealBuyer(uint i) external view returns (address)
+  // get the buyer address of a deal
+  function getDealBuyer(uint localIndex) external view returns (address)
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
-    // i < dealOwners[tx.origin].length --- deal count is out of bound.
-    require(i < orderModel.getDealCount(tx.origin));
+    // localIndex < dealOwners[msg.sender].length --- deal count is out of bound.
+    require(localIndex < orderModel.getDealCount(msg.sender));
 
-    uint dealIndex = orderModel.getDealIndex(tx.origin, i);
+    uint dealIndex = orderModel.getDealIndex(msg.sender, localIndex);
     return orderModel.getDealRole(dealIndex, 0);
   }
 
-  function isDealAdmin(uint i) external view returns (bool)
+  // check if the dispute period of a deal expired
+  function isDealDisputePeriodExpired(uint localIndex) external view returns (bool)
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
-    // i < dealOwners[tx.origin].length --- deal count is out of bound.
-    require(i < orderModel.getDealCount(tx.origin));
+    // localIndex < dealOwners[msg.sender].length --- deal count is out of bound.
+    require(localIndex < orderModel.getDealCount(msg.sender));
 
-    uint dealIndex = orderModel.getDealIndex(tx.origin, i);
-    return orderModel.getDealRole(dealIndex, 2) == tx.origin;
-  }
-
-  function isDealDisputePeriodExpired(uint i) external view returns (bool)
-  {
-    OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
-
-    // i < dealOwners[tx.origin].length --- deal count is out of bound.
-    require(i < orderModel.getDealCount(tx.origin));
-
-    uint dealIndex = orderModel.getDealIndex(tx.origin, i);
+    uint dealIndex = orderModel.getDealIndex(msg.sender, localIndex);
     return (block.number.sub(orderModel.getDealNumericalData(dealIndex, 1)) > orderModel.getDealNumericalData(dealIndex, 4));
   }
 
-  function getDisputePeriodRemains(uint i) external view returns (uint)
+  // get the remaining number of blocks before dispute period expired
+  function getDisputePeriodRemains(uint localIndex) external view returns (uint)
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
-    // i < dealOwners[tx.origin].length --- deal count is out of bound.
-    require(i < orderModel.getDealCount(tx.origin));
+    // localIndex < dealOwners[msg.sender].length --- deal count is out of bound.
+    require(localIndex < orderModel.getDealCount(msg.sender));
 
-    uint dealIndex = orderModel.getDealIndex(tx.origin, i);
+    uint dealIndex = orderModel.getDealIndex(msg.sender, localIndex);
 
     uint timeElapsed = block.number.sub(orderModel.getDealNumericalData(dealIndex, 1));
     if(timeElapsed < orderModel.getDealNumericalData(dealIndex, 4))
@@ -198,14 +210,15 @@ contract OrderDetailsController {
     return 0;
   }
 
-  function getCancellationPeriodRemains(uint i) external view returns (uint)
+  // get the remaining number of blocks before cancellation period expired
+  function getCancellationPeriodRemains(uint localIndex) external view returns (uint)
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
-    // i < dealOwners[tx.origin].length --- deal count is out of bound.
-    require(i < orderModel.getDealCount(tx.origin));
+    // localIndex < dealOwners[msg.sender].length --- deal count is out of bound.
+    require(localIndex < orderModel.getDealCount(msg.sender));
 
-    uint dealIndex = orderModel.getDealIndex(tx.origin, i);
+    uint dealIndex = orderModel.getDealIndex(msg.sender, localIndex);
 
     if(orderModel.getDealFlag(dealIndex, 4))
     {

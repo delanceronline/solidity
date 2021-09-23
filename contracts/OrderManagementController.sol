@@ -10,12 +10,21 @@ import './TokenEscrow.sol';
 import './OrderEscrow.sol';
 import './MarketplaceController.sol';
 
+/*
+------------------------------------------------------------------------------------
+
+This is the controller class for the order management which mainly gets access to the order model.
+
+------------------------------------------------------------------------------------
+*/
+
 contract OrderManagementController {
   
   using SafeMath for uint256;
 
   address public modelAddress;
 
+  // moderator only modifier
   modifier moderatorOnly() {
 
     require(Model(modelAddress).isModerator(msg.sender), "Moderator access only in order management controller");
@@ -28,42 +37,42 @@ contract OrderManagementController {
     modelAddress = addr;
   }
 
-  function resolveDispute(uint dealIndex, bool shouldRefund) external moderatorOnly
+  // called by moderator only and set the dispute case result of a deal
+  function resolveDispute(uint globalDealIndex, bool shouldRefund) external moderatorOnly
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
-    require(dealIndex < orderModel.getTotalDealCount());
+    require(globalDealIndex < orderModel.getTotalDealCount());
 
-    orderModel.setDealFlag(dealIndex, 6, true);
-    orderModel.setDealFlag(dealIndex, 7, shouldRefund);
+    orderModel.setDealFlag(globalDealIndex, 6, true);
+    orderModel.setDealFlag(globalDealIndex, 7, shouldRefund);
 
     // restore quantity on held
-    ProductController(Model(modelAddress).productControllerAddress()).plusProductQuantity(orderModel.getDealNumericalData(dealIndex, 5), orderModel.getDealNumericalData(dealIndex, 6));    
+    ProductController(Model(modelAddress).productControllerAddress()).plusProductQuantity(orderModel.getDealNumericalData(globalDealIndex, 5), orderModel.getDealNumericalData(globalDealIndex, 6));    
 
-    uint totalAmount = orderModel.getDealNumericalData(dealIndex, 7);
+    uint totalAmount = orderModel.getDealNumericalData(globalDealIndex, 7);
     uint handlingFee = totalAmount.mul(Model(modelAddress).moderatorHandlingFeeRate().div(100));
 
     if(handlingFee > 0)
     {        
-      orderModel.setDealNumericalData(dealIndex, 7, totalAmount.sub(handlingFee));        
+      orderModel.setDealNumericalData(globalDealIndex, 7, totalAmount.sub(handlingFee));        
       
       // send handling fee to moderator
       OrderEscrow(Model(modelAddress).orderEscrowAddress()).transferStabeCoin(msg.sender, handlingFee);
     }
 
-    EventModel(Model(modelAddress).eventModelAddress()).onDisputeResolvedEmit(dealIndex, shouldRefund, handlingFee);
+    EventModel(Model(modelAddress).eventModelAddress()).onDisputeResolvedEmit(globalDealIndex, shouldRefund, handlingFee);
   }
 
-  // seller functions
-
-  function setDealShipped(uint i, string calldata shippingNote) external
+  // seller ships the deal
+  function setDealShipped(uint localDealIndex, string calldata shippingNote) external
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
-    // i < dealOwners[msg.sender].length --- deal count is out of bound.
-    require(i < orderModel.getTotalDealCount());
+    // localDealIndex < dealOwners[msg.sender].length --- deal count is out of bound.
+    require(localDealIndex < orderModel.getTotalDealCount());
 
-    uint dealIndex = orderModel.getDealIndex(tx.origin, i);
+    uint dealIndex = orderModel.getDealIndex(tx.origin, localDealIndex);
     require(!orderModel.getDealFlag(dealIndex, 1));
 
     // !deal.flags[1] && !deal.flags[3] --- Not shipped AND not cancelled
@@ -89,14 +98,14 @@ contract OrderManagementController {
   }
   
   // seller accepts a deal request from a buyer
-  function acceptDeal(uint i) external
+  function acceptDeal(uint localDealIndex) external
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
-    // i < dealOwners[msg.sender].length --- deal count is out of bound.
-    require(i < orderModel.getTotalDealCount());
+    // localDealIndex < dealOwners[msg.sender].length --- deal count is out of bound.
+    require(localDealIndex < orderModel.getTotalDealCount());
 
-    uint dealIndex = orderModel.getDealIndex(msg.sender, i);
+    uint dealIndex = orderModel.getDealIndex(msg.sender, localDealIndex);
     require(!orderModel.getDealFlag(dealIndex, 1));
 
     // !deal.flags[4] && !deal.flags[3] --- Not accepted yet AND not cancelled
@@ -107,14 +116,15 @@ contract OrderManagementController {
     orderModel.setDealNumericalData(dealIndex, 2, block.number);
   }
 
-  function rejectDeal(uint i) external
+  // seller rejects a deal
+  function rejectDeal(uint localDealIndex) external
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
-    // i < dealOwners[tx.origin].length --- deal count is out of bound.
-    require(i < orderModel.getTotalDealCount());
+    // localDealIndex < dealOwners[tx.origin].length --- deal count is out of bound.
+    require(localDealIndex < orderModel.getTotalDealCount());
 
-    uint dealIndex = orderModel.getDealIndex(msg.sender, i);
+    uint dealIndex = orderModel.getDealIndex(msg.sender, localDealIndex);
 
     // !deal.flags[3] && !deal.flags[2] --- Not cancelled AND not finalized
     // tx.origin == deal.roles[1] --- Only seller can refund a deal.
@@ -141,14 +151,15 @@ contract OrderManagementController {
     }
   }
 
-  function disputeDeal(uint i, string calldata details) external
+  // called by the buyer to raise a dispute of a deal
+  function disputeDeal(uint localDealIndex, string calldata details) external
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
     // deal count is out of bound.
-    require(i < orderModel.getTotalDealCount());
+    require(localDealIndex < orderModel.getTotalDealCount());
 
-    uint dealIndex = orderModel.getDealIndex(msg.sender, i);
+    uint dealIndex = orderModel.getDealIndex(msg.sender, localDealIndex);
 
     // block.number.sub(deal.numericalData[1]) <= deal.numericalData[4] --- Only can raise a dispute within safe period.
     // deal.flags[4] && deal.flags[1] && !deal.flags[2] && !deal.flags[5] --- Order must be accepted by seller AND shipped by seller AND not finalzied AND not under dispute.
@@ -159,14 +170,15 @@ contract OrderManagementController {
     EventModel(Model(modelAddress).eventModelAddress()).onDisputeDealEmit(dealIndex, details);
   }
 
-  function extendDealSafeDuration(uint i) external
+  // called by buyer to extend the safe duration (to postpone finalization time)
+  function extendDealSafeDuration(uint localDealIndex) external
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
     // deal count is out of bound.
-    require(i < orderModel.getTotalDealCount());
+    require(localDealIndex < orderModel.getTotalDealCount());
 
-    uint dealIndex = orderModel.getDealIndex(msg.sender, i);
+    uint dealIndex = orderModel.getDealIndex(msg.sender, localDealIndex);
 
     // Extension is allowed AND only buyer can extend a deal AND only can extend a deal after item shipped AND not under dispute AND not finalized.
     require(orderModel.getDealFlag(dealIndex, 0) && msg.sender == orderModel.getDealRole(dealIndex, 0) && orderModel.getDealFlag(dealIndex, 1) && !orderModel.getDealFlag(dealIndex, 5) && !orderModel.getDealFlag(dealIndex, 2));
@@ -175,17 +187,18 @@ contract OrderManagementController {
     orderModel.setDealNumericalData(dealIndex, 4, orderModel.getDealNumericalData(dealIndex, 4).add(orderModel.getDealNumericalData(dealIndex, 3).sub(remains)));
   }
 
-  function cancelDeal(uint i) external
+  // buyer cancels a deal request
+  function cancelDeal(uint localDealIndex) external
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
     // deal count is out of bound.
-    require(i < orderModel.getTotalDealCount());
+    require(localDealIndex < orderModel.getTotalDealCount());
 
-    uint dealIndex = orderModel.getDealIndex(msg.sender, i);
+    uint dealIndex = orderModel.getDealIndex(msg.sender, localDealIndex);
 
     // !deal.flags[3] && !deal.flags[2] --- Not cancelled AND not finalized
-    // tx.origin == deal.roles[0] --- Only buyer can cancel a deal.
+    // msg.sender == deal.roles[0] --- Only buyer can cancel a deal.
     // !deal.flags[4] -> Only can cancel a deal before accepted by seller OR
     // deal.flags[4] && !deal.flags[1] && (block.number - deal.numericalData[2] > deal.numericalData[9]) -> 
     // time from deal accepted should expire shipping period but not shipped yet OR
@@ -198,14 +211,15 @@ contract OrderManagementController {
     ProductController(Model(modelAddress).productControllerAddress()).plusProductQuantity(orderModel.getDealNumericalData(dealIndex, 5), orderModel.getDealNumericalData(dealIndex, 6));
   }
 
-  function submitRatingAndReview(uint i, uint8 rating, bytes calldata review) external
+  // buyer submits rating and review of a complete deal
+  function submitRatingAndReview(uint localDealIndex, uint8 rating, bytes calldata review) external
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
     // 'deal count is out of bound AND rating score should be greater than zero.'
-    require(i < orderModel.getTotalDealCount() && rating > 0);
+    require(localDealIndex < orderModel.getTotalDealCount() && rating > 0);
 
-    uint dealIndex = orderModel.getDealIndex(msg.sender, i);
+    uint dealIndex = orderModel.getDealIndex(msg.sender, localDealIndex);
 
     // !deal.flags[10] || isDirectDealRatingAllowed --- non direct deal or rating is allowed
     // deal.flags[2] --- deal was finalized.
@@ -236,8 +250,5 @@ contract OrderManagementController {
       EventModel(Model(modelAddress).eventModelAddress()).onDealRatedBySellerEmit(orderModel.getDealRole(dealIndex, 1), orderModel.getDealNumericalData(dealIndex, 5), dealIndex, orderModel.getDealRole(dealIndex, 0), rating, review);      
     }
   }
-
-  // ---------------------------------------
-  // ---------------------------------------    
   
 }
