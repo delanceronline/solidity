@@ -3,6 +3,14 @@ pragma solidity >=0.4.21 <0.6.0;
 import "./math/SafeMath.sol";
 import './Model.sol';
 
+/*
+------------------------------------------------------------------------------------
+
+All kinds of events are published from this class.
+
+------------------------------------------------------------------------------------
+*/
+
 contract EventModel {
   
   address public modelAddress;
@@ -21,28 +29,70 @@ contract EventModel {
 
   }
 
-  event onPushMarketPGPPublicKey(string publicKey);  
+  // emitted when marketplace's PGP public key stored
+  event onPushMarketPGPPublicKey(string publicKey);
+
+  // emitted when a marketplace announcement added
   event onPushAnnouncement(uint indexed id, bytes title, bytes message);
+
+  // emitted when a marketplace announcement edited
   event onModifyAnnouncement(uint indexed id, uint8 operator, bytes details);
+
+  // emitted when item's detail added
   event onAddItemDetails(uint indexed igi, uint id, bytes details);
+
+  // emitted when item's category set
   event onSetItemOfCategory(uint indexed category, uint indexed igi, bytes title, bool isEnabled);
+
+  // emitted when item's tag set
   event onSetItemTag(uint indexed igi, bytes32 indexed lowerCaseHash, bytes32 indexed originalHash, bytes tag, bool isEnabled);
+
+  // emitted when a discount to a customer set
   event onAddDiscountToClient(address indexed vendor, address indexed client, uint indexed igi, uint8 discountRate, bytes additional);
+
+  // emitted when a batch purchase offer of an item is set
   event onAddBatchOffer(uint indexed igi, bytes details);
+
+  // emitted when a user's profile added
   event onAddUserProfile(address indexed user, bytes32 indexed nickNameHash, bytes nickName, bytes about, string publicPGP, bytes additional);
+
+  // emitted when an item is set as a featured item
   event onSetFeaturedItem(uint indexed igi, bool isEnabled);
+
+  // emitted when a merchant is set as a featured one
   event onSetFeaturedVendor(address indexed vendor, bool isEnabled);
+
+  // emitted when a merchant is set as a favour one by a buyer
   event onSetFavourSeller(address indexed buyer, address indexed seller, bool isEnabled);
+
+  // emitted when an item is set as a favour item by a buyer
   event onSetFavourItem(address indexed buyer, uint indexed igi, bool isEnabled);
+
+  // emitted when private message is sent by any users
   event onMessageSent(address indexed sender, address indexed receiver, bytes details);
 
+  // emitted when a deal request created by a buyer
   event onDealCreated(uint indexed dealIndex, address indexed seller, address indexed buyer, string buyerNote);
+
+  // emitted when a shipping note is given / set by a merchant
   event onDealSetShippingNote(uint indexed dealIndex, string shippingNote);
+
+  // emitted when a deal is fulfilled or finalized
   event onDealFinalized(address indexed seller, address indexed buyer, uint indexed itemGlobalIndex, uint dealIndex);
+
+  // emitted when a deal is rated by a buyer
   event onDealRatedByBuyer(address indexed seller, uint indexed itemGlobalIndex, uint indexed dealIndex, address buyer, uint8 rating, bytes review);
+
+  // emitted when a deal is rated by a merchant
   event onDealRatedBySeller(address indexed seller, uint indexed itemGlobalIndex, uint indexed dealIndex, address buyer, uint8 rating, bytes review);
+
+  // emitted when a dispute is raised by a buyer
   event onDisputeDeal(uint indexed dealIndex, string details);
+
+  // emitted when a dispute is resolved by a moderator
   event onDisputeResolved(uint indexed dealIndex, bool shouldRefund, uint disputeHandlingFee);
+
+  // emitted when a moderator is rated by seller or buyer
   event onRateModerator(address indexed voter, address indexed moderator, uint indexed dealIndex, uint8 rating, bytes review);
 
   constructor(address addr) public
@@ -51,7 +101,7 @@ contract EventModel {
   }
 
   // ------------------------------------------------------------------------------------
-  // Emit events
+  // Event broadcasting functions called by controllers
   // ------------------------------------------------------------------------------------
 
   function onPushMarketPGPPublicKeyEmit(string calldata publicKey) controllerOnly external{
