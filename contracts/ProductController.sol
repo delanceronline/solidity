@@ -9,12 +9,21 @@ import './Token.sol';
 import './TokenEscrow.sol';
 import './OrderEscrow.sol';
 
+/*
+------------------------------------------------------------------------------------
+
+This is the controller class for the items / products which mainly gets access to the product model.
+
+------------------------------------------------------------------------------------
+*/
+
 contract ProductController {
   
   using SafeMath for uint256;
 
   address public modelAddress;
 
+  // administrator only modifier
   modifier adminOnly() {
 
     require(Model(modelAddress).isAdmin(msg.sender), "Admin access only in product controller");
@@ -22,6 +31,7 @@ contract ProductController {
 
   }
 
+  // moderator only modifier
   modifier moderatorOnly() {
 
     require(Model(modelAddress).isModerator(msg.sender), "Moderator access only in product controller");
@@ -29,12 +39,13 @@ contract ProductController {
 
   }
 
-   modifier controllerOnly(){
+  // controller only modifier
+  modifier controllerOnly(){
 
     require(Model(modelAddress).isController(msg.sender), "Controller access only in product controller");
     _;
 
-   }
+  }
 
   constructor(address addr) public
   {
@@ -45,6 +56,7 @@ contract ProductController {
   // User setting
   // ------------------------------------------------------------------------------------
 
+  // add a discount offer for a buyer to a specific item
   function addClientDiscount(address client, uint igi, uint8 discountRate, bytes calldata details) external
   {
     require(client != address(0));
@@ -52,12 +64,14 @@ contract ProductController {
     EventModel(Model(modelAddress).eventModelAddress()).onAddDiscountToClientEmit(msg.sender, client, igi, discountRate, details);
   }
 
+  // add a batch purchase offer to an item
   function addBatchOffer(uint localItemIndex, bytes calldata details) external
   {
     uint igi = ProductModel(Model(modelAddress).productModelAddress()).getItemGlobalIndex(msg.sender, localItemIndex);
     EventModel(Model(modelAddress).eventModelAddress()).onAddBatchOfferEmit(igi, details);
   }
 
+  // add a private deal buyer of an item
   function setPrivateDealClient(uint localItemIndex, address buyer, bool enabled) external
   {
     ProductModel model = ProductModel(Model(modelAddress).productModelAddress());
@@ -69,6 +83,7 @@ contract ProductController {
     }
   }
 
+  // check if a user is an eligible buyer of an item
   function isEligibleBuyer(uint igi, address buyer) external view returns (bool)
   {
     require(buyer != address(0));
@@ -83,6 +98,7 @@ contract ProductController {
     return true;    
   }
 
+  // set an item as a favour one of a user
   function setFavourItem(uint igi, bool isEnabled) external
   {
     EventModel(Model(modelAddress).eventModelAddress()).onSetFavourItemEmit(msg.sender, igi, isEnabled);
@@ -92,6 +108,7 @@ contract ProductController {
   // Product management
   // ------------------------------------------------------------------------------------
 
+  // enable private deal mode of an item
   function enablePrivateDeal(uint localItemIndex, bool enabled) external
   {
     ProductModel model = ProductModel(Model(modelAddress).productModelAddress());
@@ -103,16 +120,19 @@ contract ProductController {
     }
   }
 
+  // check if an item is only available for private deal
   function isPrivateDealItem(uint igi) external view returns (bool)
   {
     return ProductModel(Model(modelAddress).productModelAddress()).getItemIsDealPrivate(igi.sub(1));
   }
 
+  // check if an item is banned
   function isItemBanned(uint igi) view external returns(bool)
   {
     return ProductModel(Model(modelAddress).productModelAddress()).getItemIsBanned(igi);
   }
 
+  // get the listed price in pegged USD of an item
   function getItemPriceUSD(uint igi) view external returns (uint)
   {
     return ProductModel(Model(modelAddress).productModelAddress()).getItemPriceUSD(igi);
@@ -124,16 +144,19 @@ contract ProductController {
     return ProductModel(Model(modelAddress).productModelAddress()).getItemGlobalIndex(vendor, localIndex);
   }
 
+  // get the no dispute period of a deal in terms of the number of blocks
   function getNoDisputePeriodOfItem(uint igi) external view returns (uint)
   {
     return ProductModel(Model(modelAddress).productModelAddress()).getItemNoDisputePeriod(igi.sub(1));
   }
 
+  // get the time limit for shipping by the seller
   function getShippingPeriodOfItem(uint igi) external view returns (uint)
   {
     return ProductModel(Model(modelAddress).productModelAddress()).getItemShippingPeriod(igi.sub(1));
   }  
 
+  // check if an item is available for deal request
   function isProductBlockValid(uint globalItemIndex) external view returns (bool)
   {
     return ProductModel(Model(modelAddress).productModelAddress()).isBlockValid(globalItemIndex);
@@ -151,11 +174,13 @@ contract ProductController {
     return ProductModel(Model(modelAddress).productModelAddress()).numOfItemsOfCategory(category);
   }
 
+  // increase the quantity left of an item
   function plusProductQuantity(uint igi, uint count) external controllerOnly
   {
     ProductModel(Model(modelAddress).productModelAddress()).plusProductQuantity(igi.sub(1), count);
   }
 
+  // decrease the quantity left of an item
   function minusProductQuantity(uint igi, uint count) external controllerOnly
   {
     ProductModel(Model(modelAddress).productModelAddress()).minusProductQuantity(igi.sub(1), count);
@@ -169,6 +194,7 @@ contract ProductController {
     model.setItemDealCount(igi.sub(1), model.getItemDealCount(igi.sub(1)).add(1));
   }
 
+  // set the rating score of an item
   function addItemRatingScore(uint igi, uint score) external controllerOnly
   {
     ProductModel model = ProductModel(Model(modelAddress).productModelAddress());
@@ -176,11 +202,13 @@ contract ProductController {
     model.setItemRatingScore(igi.sub(1), model.getItemRatingScore(igi.sub(1)).add(score));
   }
 
+  // set if an item is banned
   function setItemBanned(uint igi, bool isBanned) adminOnly external
   {
     ProductModel(Model(modelAddress).productModelAddress()).setItemIsBanned(igi, isBanned);    
   }
 
+  // set the active flag of an item
   function setItemActive(uint localItemIndex, bool isActive) external returns(bool)
   {
     ProductModel model = ProductModel(Model(modelAddress).productModelAddress());
@@ -203,6 +231,7 @@ contract ProductController {
       return false;    
   }
 
+  // set the title of an item
   function setItemTitle(uint localItemIndex, bytes calldata title) external
   {
     ProductModel model = ProductModel(Model(modelAddress).productModelAddress());
@@ -218,6 +247,7 @@ contract ProductController {
     }
   }
 
+  // set the details of an item
   function setItemDetails(uint localItemIndex, bytes calldata details) external
   {
     ProductModel model = ProductModel(Model(modelAddress).productModelAddress());
@@ -233,6 +263,7 @@ contract ProductController {
     }
   }
 
+  // set the category index of an item
   function setItemCategory(uint localItemIndex, uint8 category) external
   {
     ProductModel model = ProductModel(Model(modelAddress).productModelAddress());
@@ -251,6 +282,7 @@ contract ProductController {
     }
   }
 
+  // set the listed price of an item in pegged token
   function setItemPrice(uint localItemIndex, uint priceUSD) external
   {
     ProductModel model = ProductModel(Model(modelAddress).productModelAddress());
@@ -267,6 +299,7 @@ contract ProductController {
     }
   }
 
+  // set the quantity left of an item
   function setItemQuantity(uint localItemIndex, uint quantityLeft, bool isQuantityLimited) external
   {
     ProductModel model = ProductModel(Model(modelAddress).productModelAddress());
@@ -284,6 +317,7 @@ contract ProductController {
     }
   }
 
+  // set a tag for an item
   function setItemTag(uint localItemIndex, bytes32 lowerCaseHash, bytes32 originalHash, bytes calldata tag, bool isEnabled) external
   {
     ProductModel model = ProductModel(Model(modelAddress).productModelAddress());
@@ -298,6 +332,7 @@ contract ProductController {
     EventModel(Model(modelAddress).eventModelAddress()).onSetItemTagEmit(igi, lowerCaseHash, originalHash, tag, isEnabled);
   }
 
+  // set the no dispute period of an item in terms of the number of blocks
   function setNoDisputePeriodOfItem(uint localItemIndex, uint period) external
   {
     ProductModel model = ProductModel(Model(modelAddress).productModelAddress());
@@ -307,6 +342,7 @@ contract ProductController {
     model.setItemNoDisputePeriod(igi.sub(1), period);
   }
 
+  // set the shipping time limit of an item in terms of the number of blocks
   function setShippingPeriodOfItem(uint localItemIndex, uint period) external 
   {
     ProductModel model = ProductModel(Model(modelAddress).productModelAddress());
@@ -342,8 +378,5 @@ contract ProductController {
   {
     return ProductModel(Model(modelAddress).productModelAddress()).getItemByGlobalIndex(igi.sub(1));
   }
-
-  // ---------------------------------------
-  // ---------------------------------------    
   
 }
