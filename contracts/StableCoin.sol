@@ -4,6 +4,14 @@ import './BEP20/IBEP20.sol';
 import './BEP20/Ownable.sol';
 import "./math/SafeMath.sol";
 
+/*
+------------------------------------------------------------------------------------
+
+This is just a dummy class to simulate public pegged stable coin in the mainnet, like USDt, USDC and etc...
+
+------------------------------------------------------------------------------------
+*/
+
 contract StableCoin is Context, IBEP20, Ownable {
   using SafeMath for uint256;
 

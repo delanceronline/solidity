@@ -325,7 +325,7 @@ contract MarketplaceController {
   }
 
   // set marketplace's contact
-  function setmarketContact(bytes calldata contact) external adminOnly
+  function setMarketContact(bytes calldata contact) external adminOnly
   {
     return Model(modelAddress).saveMarketContact(contact);
   }
