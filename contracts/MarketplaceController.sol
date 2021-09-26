@@ -337,9 +337,9 @@ contract MarketplaceController {
   }
 
   // set the contact for moderator group
-  function saveModerationContact(bytes calldata contact) external adminOnly
+  function setModerationContact(bytes calldata contact) external adminOnly
   {
-    Model(modelAddress).saveModerationContact(contact);
+    Model(modelAddress).setModerationContact(contact);
   }
 
   // get the contact of the moderator group
