@@ -308,7 +308,7 @@ contract Model {
   }
 
   // set the contact for moderator group
-  function saveModerationContact(bytes calldata contact) controllerOnly external
+  function setModerationContact(bytes calldata contact) controllerOnly external
   {
     moderationContact = contact;
   }
