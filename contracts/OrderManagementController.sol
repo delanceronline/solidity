@@ -51,7 +51,7 @@ contract OrderManagementController {
     ProductController(Model(modelAddress).productControllerAddress()).plusProductQuantity(orderModel.getDealNumericalData(globalDealIndex, 5), orderModel.getDealNumericalData(globalDealIndex, 6));    
 
     uint totalAmount = orderModel.getDealNumericalData(globalDealIndex, 7);
-    uint handlingFee = totalAmount.mul(Model(modelAddress).moderatorHandlingFeeRate().div(100));
+    uint handlingFee = totalAmount.mul(MarketplaceController(Model(modelAddress).productControllerAddress()).calculateModeratorHandlingFeeRate(totalAmount).div(100));
 
     if(handlingFee > 0)
     {        

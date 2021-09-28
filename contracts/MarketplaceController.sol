@@ -193,6 +193,28 @@ contract MarketplaceController {
     return rate;
   }
 
+  // get the rate of moderator's handling fee rate upon different turnover tiers
+  function calculateModeratorHandlingFeeRate(uint priceUSD) public view returns (uint)
+  {
+    Model model = Model(modelAddress);
+    require(model.getModeratorHandlingFeeRatesLength() == model.getModeratorHandlingFeeBoundsLength());
+
+    uint rate = model.getModeratorHandlingFeeRate(model.getModeratorHandlingFeeRatesLength() - 1);
+    if(priceUSD <= model.getModeratorHandlingFeeBound(model.getModeratorHandlingFeeBoundsLength() - 1))
+    {
+      for(uint i = 1; i < model.getModeratorHandlingFeeBoundsLength(); i++)
+      {
+        if(priceUSD >= model.getModeratorHandlingFeeBound(i - 1) && priceUSD <= model.getModeratorHandlingFeeBound(i))
+        {
+          rate = model.getModeratorHandlingFeeRate(i - 1);
+          break;
+        }
+      }
+    }
+
+    return rate;
+  }  
+
   // ------------------------------------------------------------------------------------
   // User's account management
   // ------------------------------------------------------------------------------------

@@ -80,14 +80,24 @@ contract Model {
   mapping (address => uint) public vendorCommissionRates;  
 
   // handling fee percentage for dispute handled by moderator
-  uint public moderatorHandlingFeeRate;
+  uint[] public moderatorHandlingFeeBounds;
+  uint[] public moderatorHandlingFeeRates;
 
   constructor(address addr) public
   {
     admins.push(addr);
 
     // in %
-    moderatorHandlingFeeRate = 4;
+    moderatorHandlingFeeBounds.push(0);
+    moderatorHandlingFeeBounds.push(300000000000000000000);
+    moderatorHandlingFeeBounds.push(600000000000000000000);
+    moderatorHandlingFeeBounds.push(900000000000000000000);
+
+    moderatorHandlingFeeRates.push(4);
+    moderatorHandlingFeeRates.push(3);
+    moderatorHandlingFeeRates.push(2);
+    moderatorHandlingFeeRates.push(1);
+
 
     // 4 commission tiers for different deal amount in USD, in wei unit
     marketplaceCommissionBounds.push(0);
@@ -293,10 +303,58 @@ contract Model {
     return marketplaceCommissionRates[index];
   }
 
-  // set the rate for moderator's handling fee in resolving a dispute
-  function setModeratorHandlingFeeRate(uint rate) external controllerOnly
+  // add a bound for a turnover tier of moderator's handling fee
+  function addModeratorHandlingFeeBound(uint value) controllerOnly public
   {
-    moderatorHandlingFeeRate = rate;
+    moderatorHandlingFeeBounds.push(value);
+  }
+  
+  // update a bound for a turnover tier of moderator's handling fee
+  function setModeratorHandlingFeeBound(uint index, uint value) controllerOnly public
+  {
+    require(index < moderatorHandlingFeeBounds.length);
+    moderatorHandlingFeeBounds[index] = value;
+  }
+
+  // get the number of bounds from moderator's handling fee turnover tiers
+  function getModeratorHandlingFeeBoundsLength() public view returns (uint)
+  {
+    return moderatorHandlingFeeBounds.length;
+  }
+
+  // get the bound from moderator's handling fee turnover tiers
+  function getModeratorHandlingFeeBound(uint index) public view returns (uint)
+  {
+    require(index < moderatorHandlingFeeBounds.length);
+
+    return moderatorHandlingFeeBounds[index];
+  }
+
+  // add the rate of a moderator's handling fee turnover tier
+  function addModeratorHandlingFeeRate(uint value) controllerOnly public
+  {
+    moderatorHandlingFeeRates.push(value);
+  }
+
+  // update the rate of a moderator's handling fee
+  function setModeratorHandlingFeeRate(uint index, uint value) controllerOnly public
+  {
+    require(index < moderatorHandlingFeeRates.length);
+    moderatorHandlingFeeRates[index] = value;
+  }
+
+  // get the number of rates from moderator's handling fee turnover tiers
+  function getModeratorHandlingFeeRatesLength() public view returns (uint)
+  {
+    return moderatorHandlingFeeRates.length;
+  }
+
+  // get the rate from marketplace's commission turnover tiers
+  function getModeratorHandlingFeeRate(uint index) public view returns (uint)
+  {
+    require(index < moderatorHandlingFeeRates.length);
+
+    return moderatorHandlingFeeRates[index];
   }
 
   // set the marketplace's commission rate of a specific merchant
