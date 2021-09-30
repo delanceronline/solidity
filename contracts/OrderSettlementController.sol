@@ -168,7 +168,7 @@ contract OrderSettlementController {
     OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 7, totalUSD);
     OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 8, MarketplaceController(Model(modelAddress).marketplaceControllerAddress()).calculateMarketCommission(totalUSD));
     OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 9, ProductController(Model(modelAddress).productControllerAddress()).getShippingPeriodOfItem(igi));
-    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 10, MarketplaceController(Model(modelAddress).productControllerAddress()).calculateModeratorHandlingFeeRate(totalUSD));
+    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 10, MarketplaceController(Model(modelAddress).marketplaceControllerAddress()).calculateModeratorHandlingFeeRate(totalUSD));
 
     OrderModel(Model(modelAddress).orderModelAddress()).setDealFlag(dealIndex, 0, true);
 
