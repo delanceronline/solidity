@@ -197,7 +197,7 @@ contract MarketplaceController {
   function calculateModeratorHandlingFeeRate(uint priceUSD) public view returns (uint)
   {
     Model model = Model(modelAddress);
-    require(model.getModeratorHandlingFeeRatesLength() == model.getModeratorHandlingFeeBoundsLength());
+    require(model.getModeratorHandlingFeeRatesLength() == model.getModeratorHandlingFeeBoundsLength(), 'model.getModeratorHandlingFeeRatesLength() != model.getModeratorHandlingFeeBoundsLength()');
 
     uint rate = model.getModeratorHandlingFeeRate(model.getModeratorHandlingFeeRatesLength() - 1);
     if(priceUSD <= model.getModeratorHandlingFeeBound(model.getModeratorHandlingFeeBoundsLength() - 1))
