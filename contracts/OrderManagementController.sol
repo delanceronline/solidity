@@ -223,6 +223,8 @@ contract OrderManagementController {
     // tx.origin == deal.roles[0] || tx.origin == deal.roles[1] --- either seller or buyer can rate.
     require((!orderModel.getDealFlag(dealIndex, 10) || OrderModel(Model(modelAddress).orderModelAddress()).isDirectDealRatingAllowed()) && orderModel.getDealFlag(dealIndex, 2) && (msg.sender == orderModel.getDealRole(dealIndex, 0) || msg.sender == orderModel.getDealRole(dealIndex, 1)));
 
+    require(!orderModel.getDealFlag(dealIndex, 5), 'The deal was disputed before, unable to rate it.');
+
     if(msg.sender == orderModel.getDealRole(dealIndex, 0))
     {
       // buyer rates seller
