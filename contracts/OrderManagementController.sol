@@ -47,9 +47,6 @@ contract OrderManagementController {
     orderModel.setDealFlag(globalDealIndex, 6, true);
     orderModel.setDealFlag(globalDealIndex, 7, shouldRefund);
 
-    // restore quantity on held
-    ProductController(Model(modelAddress).productControllerAddress()).plusProductQuantity(orderModel.getDealNumericalData(globalDealIndex, 5), orderModel.getDealNumericalData(globalDealIndex, 6));    
-
     uint totalAmount = orderModel.getDealNumericalData(globalDealIndex, 7);
     uint handlingFee = totalAmount.mul(MarketplaceController(Model(modelAddress).marketplaceControllerAddress()).calculateModeratorHandlingFeeRate(totalAmount)).div(100);
 
