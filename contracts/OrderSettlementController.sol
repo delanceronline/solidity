@@ -1,4 +1,5 @@
-pragma solidity >=0.4.21 <0.6.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
 import "./math/SafeMath.sol";
 import './Model.sol';
@@ -24,7 +25,7 @@ contract OrderSettlementController {
 
   address public modelAddress;
 
-  constructor(address addr) public
+  constructor(address addr)
   {
     modelAddress = addr;
   }
@@ -80,66 +81,125 @@ contract OrderSettlementController {
   }
 
   // an internal function, to release funds to seller, referee (if any) and marketplace's dividend pool, during finalization
-  function releaseFunds(address sellerAddress, address refereeAddress, uint dealMarketCommission, uint dealTotalAmount) internal
+  function releaseFunds(address sellerAddress, address refereeAddress, uint dealMarketCommission, uint dealTotalAmountInWei) internal
   {
+    Token delaToken = Token(Model(modelAddress).tokenAddress());
+    StableCoin stableCoin = StableCoin(Model(modelAddress).stableCoinAddress());
+
+    uint decimalFactor = 10 ** uint(delaToken.decimals() - stableCoin.decimals());
+    uint dealTotalAmountInXwei = dealTotalAmountInWei.div(decimalFactor);
+
     // pay the seller
     uint rate = Model(modelAddress).vendorCommissionRates(sellerAddress);
     if(rate == 0)
       rate = dealMarketCommission;
     
     // release fund to the seller
-    uint net = dealTotalAmount.sub((dealTotalAmount.mul(rate)).div(100));
-    OrderEscrow(Model(modelAddress).orderEscrowAddress()).transferStabeCoin(sellerAddress, net);
+    uint netInXwei = dealTotalAmountInXwei.sub((dealTotalAmountInXwei.mul(rate)).div(100));
+    OrderEscrow(Model(modelAddress).orderEscrowAddress()).transferStabeCoin(sellerAddress, netInXwei);
     
     // pool proportation
-    uint tokenPoolAmount = dealTotalAmount.sub(net);
+    uint tokenPoolAmountInXwei = dealTotalAmountInXwei.sub(netInXwei);
 
-    // --------------------- rewarding DELA ---------------------
-    Token delaToken = Token(Model(modelAddress).tokenAddress());
-    uint rewardAmount = tokenPoolAmount;
-    uint balanceLeft = delaToken.balanceOf(Model(modelAddress).tokenEscrowAddress());
-    if(balanceLeft > 0)
+    // remaining to dividend pool
+    OrderEscrow(Model(modelAddress).orderEscrowAddress()).transferStabeCoin(Model(modelAddress).dividendPoolAddress(), tokenPoolAmountInXwei);
+
+    // --------------------- rewarding DELA ---------------------    
+    uint rewardAmountInWei = tokenPoolAmountInXwei.mul(decimalFactor);
+    uint balanceLeftInWei = delaToken.balanceOf(Model(modelAddress).tokenEscrowAddress());
+    if(balanceLeftInWei > 0)
     {
-      if(tokenPoolAmount > balanceLeft)
+      if(tokenPoolAmountInXwei.mul(decimalFactor) > balanceLeftInWei)
       {
         // reward all remaining DELA in escrow
-        rewardAmount = balanceLeft;
+        rewardAmountInWei = balanceLeftInWei;
       }
     }
 
-    uint refereeAmount = 0;
+    uint refereeAmountInWei = 0;
     // see if any referee
     if(refereeAddress != address(0))
     {
-      refereeAmount = rewardAmount.div(2);
-      TokenEscrow(Model(modelAddress).tokenEscrowAddress()).rewardToken(refereeAddress, refereeAmount);
+      refereeAmountInWei = rewardAmountInWei.div(2);
+      TokenEscrow(Model(modelAddress).tokenEscrowAddress()).rewardToken(refereeAddress, refereeAmountInWei);
     }
 
     // reward seller with DELA
-    TokenEscrow(Model(modelAddress).tokenEscrowAddress()).rewardToken(sellerAddress, rewardAmount.sub(refereeAmount));
+    TokenEscrow(Model(modelAddress).tokenEscrowAddress()).rewardToken(sellerAddress, rewardAmountInWei.sub(refereeAmountInWei));
     // --------------------------------------------------------------- //
-
-    // remaining to dividend pool
-    OrderEscrow(Model(modelAddress).orderEscrowAddress()).transferStabeCoin(Model(modelAddress).dividendPoolAddress(), tokenPoolAmount);
   }
-
+  
   // setup a deal, called by buyer only
-  function setupDeal(address payable seller, uint igi, string calldata buyerNote, uint quantity, address referee, address moderator, uint totalUSD) external
+  function setupDeal(address seller, uint igi, string calldata buyerNote, uint quantity, address referee, address moderator, uint totalUSDInWei) external
   {
     ProductController productController = ProductController(Model(modelAddress).productControllerAddress());
 
     require(MarketplaceController(Model(modelAddress).marketplaceControllerAddress()).isSellerBanned(seller) != true && !productController.isItemBanned(igi - 1), 'Seller or item is banned.');
     
     StableCoin stableCoin = StableCoin(Model(modelAddress).stableCoinAddress());
-    require(productController.getItemPriceUSD(igi - 1) <= stableCoin.balanceOf(msg.sender), 'Not enough balance for paying.');
+    //Token delaToken = Token(Model(modelAddress).tokenAddress());
 
-    addDeal(seller, igi, buyerNote, quantity, referee, moderator, totalUSD);
+    //uint decimalFactor = 10 ** uint(delaToken.decimals() - stableCoin.decimals());
+    require(totalUSDInWei <= stableCoin.balanceOf(msg.sender).mul(10 ** 12), 'Not enough balance for paying.');
 
-    stableCoin.transferFrom(msg.sender, Model(modelAddress).orderEscrowAddress(), totalUSD);
+    //addDeal(seller, igi, buyerNote, quantity, referee, moderator, totalUSDInWei);
+    /*
+    (, , bool isActive, , , , uint quantityLeft, bool isLimited, ,) = ProductController(Model(modelAddress).productControllerAddress()).getItemByGlobal(igi);
+    uint dealIndex = OrderModel(Model(modelAddress).orderModelAddress()).createDeal();
+    
+    OrderModel(Model(modelAddress).orderModelAddress()).setDealRole(dealIndex, 0, tx.origin);
+    OrderModel(Model(modelAddress).orderModelAddress()).setDealRole(dealIndex, 1, seller);
+    OrderModel(Model(modelAddress).orderModelAddress()).setDealRole(dealIndex, 2, referee);
+    OrderModel(Model(modelAddress).orderModelAddress()).setDealRole(dealIndex, 3, moderator);
+
+    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 0, block.number);
+    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 3, ProductController(Model(modelAddress).productControllerAddress()).getNoDisputePeriodOfItem(igi));
+    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 4, ProductController(Model(modelAddress).productControllerAddress()).getNoDisputePeriodOfItem(igi));
+    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 5, igi);
+    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 6, quantity);
+    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 7, totalUSDInWei);
+    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 8, MarketplaceController(Model(modelAddress).marketplaceControllerAddress()).calculateMarketCommission(totalUSDInWei));
+    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 9, ProductController(Model(modelAddress).productControllerAddress()).getShippingPeriodOfItem(igi));
+    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 10, MarketplaceController(Model(modelAddress).marketplaceControllerAddress()).calculateModeratorHandlingFeeRate(totalUSDInWei));
+
+    OrderModel(Model(modelAddress).orderModelAddress()).setDealFlag(dealIndex, 0, true);
+
+    OrderModel(Model(modelAddress).orderModelAddress()).addDealIndex(tx.origin, dealIndex);
+    OrderModel(Model(modelAddress).orderModelAddress()).addDealIndex(seller, dealIndex);
+
+    ProductController(Model(modelAddress).productControllerAddress()).minusProductQuantity(igi, quantity);
+
+    EventModel(Model(modelAddress).eventModelAddress()).onDealCreatedEmit(dealIndex, seller, tx.origin, buyerNote);
+    */
+    SharedStructs.Deal memory deal;
+    deal.roles[0] = tx.origin;
+    deal.roles[1] = seller;
+    deal.roles[2] = referee;
+    deal.roles[3] = moderator;
+    deal.numericalData[0] = block.number;
+    deal.numericalData[3] = ProductController(Model(modelAddress).productControllerAddress()).getNoDisputePeriodOfItem(igi);
+    deal.numericalData[4] = ProductController(Model(modelAddress).productControllerAddress()).getNoDisputePeriodOfItem(igi);
+    deal.numericalData[5] = igi;
+    deal.numericalData[6] = quantity;
+    deal.numericalData[7] = totalUSDInWei;
+    deal.numericalData[8] = MarketplaceController(Model(modelAddress).marketplaceControllerAddress()).calculateMarketCommission(totalUSDInWei);
+    deal.numericalData[9] = ProductController(Model(modelAddress).productControllerAddress()).getShippingPeriodOfItem(igi);
+    deal.numericalData[10] = MarketplaceController(Model(modelAddress).marketplaceControllerAddress()).calculateModeratorHandlingFeeRate(totalUSDInWei);    
+    deal.flags[0] = true;
+    uint dealIndex = OrderModel(Model(modelAddress).orderModelAddress()).addDeal(deal);
+
+    OrderModel(Model(modelAddress).orderModelAddress()).addDealIndex(tx.origin, dealIndex);
+    OrderModel(Model(modelAddress).orderModelAddress()).addDealIndex(seller, dealIndex);
+
+    ProductController(Model(modelAddress).productControllerAddress()).minusProductQuantity(igi, quantity);
+    EventModel(Model(modelAddress).eventModelAddress()).onDealCreatedEmit(dealIndex, seller, tx.origin, buyerNote);   
+
+    stableCoin.transferFrom(msg.sender, Model(modelAddress).orderEscrowAddress(), totalUSDInWei.div(10 ** 12));
   }
 
+  /*
   // an internal function, adding a deal to order model
-  function addDeal(address seller, uint igi, string memory buyerNote, uint quantity, address referee, address moderator, uint totalUSD) internal
+  function addDeal(address seller, uint igi, string memory buyerNote, uint quantity, address referee, address moderator, uint totalUSDInWei) internal
   {
     require(igi > 0, "Item global index is invalid.");
     require(ProductController(Model(modelAddress).productControllerAddress()).isProductBlockValid(igi.sub(1)), "Item is not available yet.");
@@ -165,10 +225,10 @@ contract OrderSettlementController {
     OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 4, ProductController(Model(modelAddress).productControllerAddress()).getNoDisputePeriodOfItem(igi));
     OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 5, igi);
     OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 6, quantity);
-    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 7, totalUSD);
-    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 8, MarketplaceController(Model(modelAddress).marketplaceControllerAddress()).calculateMarketCommission(totalUSD));
+    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 7, totalUSDInWei);
+    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 8, MarketplaceController(Model(modelAddress).marketplaceControllerAddress()).calculateMarketCommission(totalUSDInWei));
     OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 9, ProductController(Model(modelAddress).productControllerAddress()).getShippingPeriodOfItem(igi));
-    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 10, MarketplaceController(Model(modelAddress).marketplaceControllerAddress()).calculateModeratorHandlingFeeRate(totalUSD));
+    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 10, MarketplaceController(Model(modelAddress).marketplaceControllerAddress()).calculateModeratorHandlingFeeRate(totalUSDInWei));
 
     OrderModel(Model(modelAddress).orderModelAddress()).setDealFlag(dealIndex, 0, true);
 
@@ -181,22 +241,26 @@ contract OrderSettlementController {
   }
 
   // setup a direct deal (without deal dispute option), called by buyer
-  function setupDirectDeal(address seller, uint igi, string calldata buyerNote, uint quantity, uint totalUSD) external
+  function setupDirectDeal(address seller, uint igi, string calldata buyerNote, uint quantity, uint totalUSDInWei) external
   {
     ProductController productController = ProductController(Model(modelAddress).productControllerAddress());
 
     require(MarketplaceController(Model(modelAddress).marketplaceControllerAddress()).isSellerBanned(seller) && !productController.isItemBanned(igi - 1), 'Seller or item is banned.');
 
     StableCoin stableCoin = StableCoin(Model(modelAddress).stableCoinAddress());
-    require(productController.getItemPriceUSD(igi - 1) <= stableCoin.balanceOf(msg.sender), 'Not enough balance for paying.');
+    Token delaToken = Token(Model(modelAddress).tokenAddress());
 
-    addDirectDeal(seller, igi, buyerNote, quantity, totalUSD);
+    uint decimalFactor = 10 ** uint(delaToken.decimals() - stableCoin.decimals());
+    require(totalUSDInWei <= stableCoin.balanceOf(msg.sender).mul(decimalFactor), 'Not enough balance for paying.');
 
-    stableCoin.transferFrom(msg.sender, Model(modelAddress).orderEscrowAddress(), productController.getItemPriceUSD(igi - 1));
+    addDirectDeal(seller, igi, buyerNote, quantity, totalUSDInWei);
+
+    stableCoin.transferFrom(msg.sender, Model(modelAddress).orderEscrowAddress(), totalUSDInWei.div(decimalFactor));
+
   }
 
   // an internal function to add a deal to order model
-  function addDirectDeal(address seller, uint igi, string memory buyerNote, uint quantity, uint totalUSD) internal
+  function addDirectDeal(address seller, uint igi, string memory buyerNote, uint quantity, uint totalUSDInWei) internal
   {
     require(igi > 0, "Item global index is invalid.");
     require(ProductController(Model(modelAddress).productControllerAddress()).isProductBlockValid(igi.sub(1)), "Item is not available yet.");
@@ -218,7 +282,7 @@ contract OrderSettlementController {
     model.setDealNumericalData(dealIndex, 0, block.number);
     model.setDealNumericalData(dealIndex, 5, igi);
     model.setDealNumericalData(dealIndex, 6, quantity);
-    model.setDealNumericalData(dealIndex, 7, totalUSD); // --- ???
+    model.setDealNumericalData(dealIndex, 7, totalUSDInWei); // --- ???
 
     model.setDealFlag(dealIndex, 10, true);
 
@@ -229,5 +293,5 @@ contract OrderSettlementController {
 
     EventModel(Model(modelAddress).eventModelAddress()).onDealCreatedEmit(dealIndex, seller, tx.origin, buyerNote);
   }
-  
+  */
 }

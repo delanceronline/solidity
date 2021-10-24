@@ -1,4 +1,5 @@
-pragma solidity >=0.4.21 <0.6.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
 import "./math/SafeMath.sol";
 import './Model.sol';
@@ -50,8 +51,11 @@ contract ProductModel {
     uint shippingPeriod;                        // the time limit which the merchant has to ship the item, in number of blocks
     uint creationBlockNumber;                   // the block number at which the deal was created
     uint validBlockCount;                       // the number of blocks which after that the item will become available for deal request
-    mapping (address => bool) allowedClients;   // the item is only available to those who are inside the list, if it is non empty
+    //mapping (address => bool) allowedClients;   // the item is only available to those who are inside the list, if it is non empty
   }
+
+  // the item is only available to those who are inside the list, if it is non empty
+  mapping (uint => mapping (address => bool)) public allowedClients;
 
   // item list
   Item[] public listedItems;
@@ -62,7 +66,7 @@ contract ProductModel {
   // store the item indice of a category
   mapping (uint8 => uint[]) public itemCategories;
 
-  constructor(address addr) public
+  constructor(address addr)
   {
     modelAddress = addr;
   }
@@ -213,6 +217,24 @@ contract ProductModel {
   function addItem(uint8 category, uint priceUSD, bytes calldata title, uint quantityLeft, bool isQuantityLimited, uint noDisputePeriod, uint shippingPeriod, uint validBlockCount) external productControllerOnly
   {
     listedItems.push(Item(category, priceUSD, true, title, 0, 0, quantityLeft, isQuantityLimited, false, false, noDisputePeriod, shippingPeriod, block.number, validBlockCount));
+    /*
+    Item memory item;
+    item.category = category;
+    item.priceUSD = priceUSD;
+    item.isActive = true;
+    item.title = title;
+    item.dealCount = 0;
+    item.ratingScore = 0;
+    item.quantityLeft = quantityLeft;
+    item.isQuantityLimited = isQuantityLimited;
+    item.isDealPrivate = false;
+    item.isBanned = false;
+    item.noDisputePeriod = noDisputePeriod;
+    item.shippingPeriod = shippingPeriod;
+    item.creationBlockNumber = block.number;
+    item.validBlockCount = validBlockCount;
+    listedItems.push(item);
+    */
   }
 
   // set item category index of an item
@@ -317,7 +339,8 @@ contract ProductModel {
     require(globalItemIndex < listedItems.length);
     require(clientAddress != address(0));
 
-    listedItems[globalItemIndex].allowedClients[clientAddress] = isAllowed;
+    //listedItems[globalItemIndex].allowedClients[clientAddress] = isAllowed;
+    allowedClients[globalItemIndex][clientAddress] = isAllowed;
   }
 
   // check if a user is an allowed buyer of an item
@@ -326,7 +349,8 @@ contract ProductModel {
     require(clientAddress != address(0));
     require(globalItemIndex < listedItems.length);
 
-    return listedItems[globalItemIndex].allowedClients[clientAddress];
+    //return listedItems[globalItemIndex].allowedClients[clientAddress];
+    return allowedClients[globalItemIndex][clientAddress];
   }
 
   // add the global item index of an item to an item seller / owner
@@ -344,7 +368,8 @@ contract ProductModel {
     require(position < itemOwners[seller].length);
 
     itemOwners[seller][position] = itemOwners[seller][itemOwners[seller].length.sub(1)];
-    itemOwners[seller].length--;
+    //itemOwners[seller].length--;
+    itemOwners[seller].pop();
   }
 
   // add a global item index of an item to a category
@@ -359,7 +384,8 @@ contract ProductModel {
     require(position < itemCategories[category].length);
 
     itemCategories[category][position] = itemCategories[category][itemCategories[category].length.sub(1)];
-    itemCategories[category].length--;
+    //itemCategories[category].length--;
+    itemCategories[category].pop();
   }
 
   // return num of items of a category
@@ -380,7 +406,7 @@ contract ProductModel {
   // get an item by given a global item index
   function getItemByGlobalIndex(uint igi) public view returns (uint8, uint, bool, bytes memory, uint, uint, uint, bool, uint, uint){
 
-    Item memory item = listedItems[igi];
+    Item storage item = listedItems[igi];
     require(item.category != 0);
     
     return (item.category, item.priceUSD, item.isActive, item.title, item.dealCount, item.ratingScore, item.quantityLeft, item.isQuantityLimited, item.creationBlockNumber, item.validBlockCount);

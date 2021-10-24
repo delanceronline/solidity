@@ -1,4 +1,5 @@
-pragma solidity >=0.4.21 <0.6.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
 import "./math/SafeMath.sol";
 import './Model.sol';
@@ -14,27 +15,7 @@ This is the model for the orders handling which is mainly accessible by the orde
 ------------------------------------------------------------------------------------
 */
 
-contract OrderModel {
-
-  using SafeMath for uint256;
-
-  address public modelAddress;
-
-  // order controllers only modifier
-  modifier orderControllerOnly() {
-
-    require(msg.sender == Model(modelAddress).orderDetailsControllerAddress() || msg.sender == Model(modelAddress).orderManagementControllerAddress() || msg.sender == Model(modelAddress).orderSettlementControllerAddress(), "Order controller access only in order model");
-    _;
-
-  }
-  
-  // administrator only modifier
-  modifier adminOnly() {
-
-    require(Model(modelAddress).isAdmin(msg.sender), "Admin access only in order model");
-    _; 
-
-  }
+library SharedStructs {
 
   // deal structure
   struct Deal{
@@ -75,8 +56,34 @@ contract OrderModel {
     
   }
 
+}
+
+contract OrderModel {
+
+  using SafeMath for uint256;
+
+  address public modelAddress;
+
+  // order controllers only modifier
+  modifier orderControllerOnly() {
+
+    require(msg.sender == Model(modelAddress).orderDetailsControllerAddress() || msg.sender == Model(modelAddress).orderManagementControllerAddress() || msg.sender == Model(modelAddress).orderSettlementControllerAddress(), "Order controller access only in order model");
+    _;
+
+  }
+  
+  // administrator only modifier
+  modifier adminOnly() {
+
+    require(Model(modelAddress).isAdmin(msg.sender), "Admin access only in order model");
+    _; 
+
+  }
+
+  
+
   // store all deals
-  Deal[] internal deals;
+  SharedStructs.Deal[] internal deals;
   
   // store the relation of deal owners
   mapping (address => uint[]) public dealOwners;
@@ -84,7 +91,7 @@ contract OrderModel {
   // direct deal rating flag
   bool public isDirectDealRatingAllowed;
 
-  constructor(address addr) public
+  constructor(address addr)
   {
     modelAddress = addr;
   }
@@ -199,17 +206,26 @@ contract OrderModel {
     require(position < dealOwners[seller].length);
 
     dealOwners[seller][position] = dealOwners[seller][dealOwners[seller].length - 1];
-    dealOwners[seller].length--;
+    //dealOwners[seller].length--;
+    dealOwners[seller].pop();
   }
 
+  /*
   // create a deal instance and returns its global deal index
   function createDeal() external orderControllerOnly returns (uint)
   {
-    Deal memory deal;
+    SharedStructs.Deal memory deal;
     deals.push(deal);
 
     require(deals.length > 0, "deals.length must be > zero.");
 
+    return deals.length - 1;
+  }
+  */
+  
+  function addDeal(SharedStructs.Deal calldata deal) external orderControllerOnly returns (uint)
+  {
+    deals.push(deal);
     return deals.length - 1;
   }
 

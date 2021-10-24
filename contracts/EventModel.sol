@@ -1,4 +1,5 @@
-pragma solidity >=0.4.21 <0.6.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
 import "./math/SafeMath.sol";
 import './Model.sol';
@@ -95,7 +96,7 @@ contract EventModel {
   // emitted when a moderator is rated by seller or buyer
   event onRateModerator(address indexed voter, address indexed moderator, uint indexed dealIndex, uint8 rating, bytes review);
 
-  constructor(address addr) public
+  constructor(address addr)
   {
     modelAddress = addr;
   }

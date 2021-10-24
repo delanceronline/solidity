@@ -1,314 +1,493 @@
-pragma solidity 0.5.16;
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts v4.3.2 (token/ERC20/ERC20.sol)
 
-import './BEP20/IBEP20.sol';
-import './BEP20/Ownable.sol';
+pragma solidity ^0.8.0;
 
 import "./math/SafeMath.sol";
 import './Model.sol';
 import './StableCoin.sol';
 import './OrderEscrow.sol';
 
-contract Token is Context, IBEP20, Ownable {
-  using SafeMath for uint256;
-  
-  mapping (address => uint256) private _balances;
-  mapping (address => mapping (address => uint256)) private _allowances;
-  
-  uint256 private _totalSupply;
-  uint8 private _decimals;
-  string private _symbol;
-  string private _name;
+import "./ERC20/IERC20.sol";
+import "./ERC20/IERC20Metadata.sol";
+import "./ERC20/Context.sol";
 
-  address public modelAddress;
+/**
+ * @dev Implementation of the {IERC20} interface.
+ *
+ * This implementation is agnostic to the way tokens are created. This means
+ * that a supply mechanism has to be added in a derived contract using {_mint}.
+ * For a generic mechanism see {ERC20PresetMinterPauser}.
+ *
+ * TIP: For a detailed writeup see our guide
+ * https://forum.zeppelin.solutions/t/how-to-implement-erc20-supply-mechanisms/226[How
+ * to implement supply mechanisms].
+ *
+ * We have followed general OpenZeppelin Contracts guidelines: functions revert
+ * instead returning `false` on failure. This behavior is nonetheless
+ * conventional and does not conflict with the expectations of ERC20
+ * applications.
+ *
+ * Additionally, an {Approval} event is emitted on calls to {transferFrom}.
+ * This allows applications to reconstruct the allowance for all accounts just
+ * by listening to said events. Other implementations of the EIP may not emit
+ * these events, as it isn't required by the specification.
+ *
+ * Finally, the non-standard {decreaseAllowance} and {increaseAllowance}
+ * functions have been added to mitigate the well-known issues around setting
+ * allowances. See {IERC20-approve}.
+ */
+contract Token is Context, IERC20, IERC20Metadata {
 
-  uint256 public scaling = uint256(10) ** 6;
-  mapping(address => uint256) public scaledDividendBalanceOf;
-  uint256 public scaledDividendPerToken;
-  mapping(address => uint256) public scaledDividendCreditedTo;
-  uint256 public scaledRemainder = 0;
-  uint256 public circulationTotal = 0;
+    using SafeMath for uint256;
 
-  modifier tokenEscrowOnly()
-  {
-    if(msg.sender == Model(modelAddress).tokenEscrowAddress()) _;
-  }
+    mapping(address => uint256) private _balances;
 
-  modifier orderEscrowOnly()
-  {
-    if(msg.sender == Model(modelAddress).orderEscrowAddress()) _;
-  }
+    mapping(address => mapping(address => uint256)) private _allowances;
 
-  modifier dividendPoolOnly()
-  {
-    if(msg.sender == Model(modelAddress).dividendPoolAddress()) _;
-  }
+    uint256 private _totalSupply;
 
-  constructor(address addr) public {
+    string private _name;
+    string private _symbol;
 
-    _name = "DELANCER";
-    _symbol = "DELA";
-    _decimals = 18;
-    _totalSupply = 10000 * (uint256(10) ** _decimals);
-    _balances[msg.sender] = _totalSupply;
+    // -----------------------------------------------------------------
+    address public modelAddress;
 
-    modelAddress = addr;
+    uint256 public scaling = uint256(10) ** 6;
+    mapping(address => uint256) public scaledDividendBalanceOf;
+    uint256 public scaledDividendPerToken;
+    mapping(address => uint256) public scaledDividendCreditedTo;
+    uint256 public scaledRemainder = 0;
+    uint256 public circulationTotal = 0;
 
-    emit Transfer(address(0), msg.sender, _totalSupply);
-  }
-
-  function withdrawDividend(address account) external dividendPoolOnly returns (uint)
-  {
-    
-    if(account != Model(modelAddress).tokenEscrowAddress())
+    modifier tokenEscrowOnly()
     {
-      update(account);
-      uint256 amount = scaledDividendBalanceOf[account].div(scaling);
-      scaledDividendBalanceOf[account] = scaledDividendBalanceOf[account].mod(scaling);  // retain the remainder
+      if(msg.sender == Model(modelAddress).tokenEscrowAddress()) _;
+    }
+
+    modifier orderEscrowOnly()
+    {
+      if(msg.sender == Model(modelAddress).orderEscrowAddress()) _;
+    }
+
+    modifier dividendPoolOnly()
+    {
+      if(msg.sender == Model(modelAddress).dividendPoolAddress()) _;
+    }
+    // -----------------------------------------------------------------
+
+    /**
+     * @dev Sets the values for {name} and {symbol}.
+     *
+     * The default value of {decimals} is 18. To select a different value for
+     * {decimals} you should overload it.
+     *
+     * All two of these values are immutable: they can only be set once during
+     * construction.
+     */
+    constructor(address addr) {
+
+      _name = "DELANCER";
+      _symbol = "DELA";
+      _totalSupply = 10000 * (uint256(10) ** 18);      
+      _balances[msg.sender] = _totalSupply;
+
+      modelAddress = addr;
+    }
+
+    function withdrawDividend(address account) external dividendPoolOnly returns (uint amountWithdrawn)
+    {
+      
+      if(account != Model(modelAddress).tokenEscrowAddress())
+      {
+        update(account);
+        uint amount = (scaledDividendBalanceOf[account].div(scaling)).div(10 ** 12);
+        scaledDividendBalanceOf[account] = scaledDividendBalanceOf[account].mod(scaling);  // retain the remainder
+
+        return amount;
+      }
+
+      return 0;
+    }
+
+    function adjustCirculationTotal(uint amount) external tokenEscrowOnly{
+
+      require(amount > 0);
+
+      if(circulationTotal > 0)
+      {
+        circulationTotal = circulationTotal.add(amount);
+      }
+      else
+      {
+        circulationTotal = amount;
+
+        uint dividendPoolBalance = (StableCoin(Model(modelAddress).stableCoinAddress()).balanceOf(Model(modelAddress).dividendPoolAddress())).mul(10 ** 12);
+        if(dividendPoolBalance > 0)
+        {
+          uint256 available = (dividendPoolBalance.mul(scaling)).add(scaledRemainder);
+          scaledDividendPerToken = scaledDividendPerToken.add(available.div(circulationTotal));
+          scaledRemainder = available.mod(circulationTotal);
+        }
+      }
+      
+    }
+
+    function dividendBalanceOf(address owner) external view returns (uint)
+    {
+      uint amount = 0;
+
+      if(owner != Model(modelAddress).tokenEscrowAddress())
+      {
+        uint256 owed = scaledDividendPerToken.sub(scaledDividendCreditedTo[owner]);
+        amount = ((scaledDividendBalanceOf[owner].add(_balances[owner].mul(owed))).div(scaling)).div(10 ** 12);
+      }
 
       return amount;
     }
 
-    return 0;
-  }
+    function update(address account) internal {
 
-  function adjustCirculationTotal(uint amount) external tokenEscrowOnly{
+      uint256 owed = scaledDividendPerToken.sub(scaledDividendCreditedTo[account]);
+      scaledDividendBalanceOf[account] = scaledDividendBalanceOf[account].add(_balances[account].mul(owed));
+      scaledDividendCreditedTo[account] = scaledDividendPerToken;    
 
-    require(amount > 0);
-
-    if(circulationTotal > 0)
-    {
-      circulationTotal = circulationTotal.add(amount);
     }
-    else
+
+    function updatePoolInflow(uint inflowAmount) external orderEscrowOnly 
     {
-      circulationTotal = amount;
+      uint256 available = (inflowAmount.mul(scaling)).add(scaledRemainder);
 
-      //uint orderEscrowBalance = StableCoin(Model(modelAddress).stableCoinAddress()).balanceOf(Model(modelAddress).orderEscrowAddress());
-      //if(orderEscrowBalance > 0)
-
-      uint dividendPoolBalance = StableCoin(Model(modelAddress).stableCoinAddress()).balanceOf(Model(modelAddress).dividendPoolAddress());
-      if(dividendPoolBalance > 0)
+      if(circulationTotal > 0)
       {
-        uint256 available = (dividendPoolBalance.mul(scaling)).add(scaledRemainder);
         scaledDividendPerToken = scaledDividendPerToken.add(available.div(circulationTotal));
         scaledRemainder = available.mod(circulationTotal);
       }
     }
-    
-  }
 
-  function dividendBalanceOf(address owner) external view returns (uint)
-  {
-    uint amount = 0;
-
-    if(owner != Model(modelAddress).tokenEscrowAddress())
-    {
-      uint256 owed = scaledDividendPerToken.sub(scaledDividendCreditedTo[owner]);
-      amount = (scaledDividendBalanceOf[owner].add(_balances[owner].mul(owed))).div(scaling);
+    /**
+     * @dev Returns the name of the token.
+     */
+    function name() public view virtual override returns (string memory) {
+        return _name;
     }
 
-    return amount;
-  }
-
-  function update(address account) internal {
-
-    uint256 owed = scaledDividendPerToken.sub(scaledDividendCreditedTo[account]);
-    scaledDividendBalanceOf[account] = scaledDividendBalanceOf[account].add(_balances[account].mul(owed));
-    scaledDividendCreditedTo[account] = scaledDividendPerToken;    
-
-  }
-
-  function updatePoolInflow(uint inflowAmount) external orderEscrowOnly 
-  {
-    uint256 available = (inflowAmount.mul(scaling)).add(scaledRemainder);
-
-    if(circulationTotal > 0)
-    {
-      scaledDividendPerToken = scaledDividendPerToken.add(available.div(circulationTotal));
-      scaledRemainder = available.mod(circulationTotal);
-    }
-  }
-
-  /**
-   * @dev Moves tokens `amount` from `sender` to `recipient`.
-   *
-   * This is internal function is equivalent to {transfer}, and can be used to
-   * e.g. implement automatic token fees, slashing mechanisms, etc.
-   *
-   * Emits a {Transfer} event.
-   *
-   * Requirements:
-   *
-   * - `sender` cannot be the zero address.
-   * - `recipient` cannot be the zero address.
-   * - `sender` must have a balance of at least `amount`.
-   */
-  function _transfer(address sender, address recipient, uint256 amount) internal {
-    
-    require(amount <= _balances[sender]);
-
-    address tokenEscrowAddress = Model(modelAddress).tokenEscrowAddress();
-
-    if(recipient != tokenEscrowAddress)
-    {
-      if(sender != tokenEscrowAddress)
-        update(sender);
-
-      update(recipient);
-
-      _balances[sender] -= amount;
-      _balances[recipient] += amount;
-      emit Transfer(sender, recipient, amount);
+    /**
+     * @dev Returns the symbol of the token, usually a shorter version of the
+     * name.
+     */
+    function symbol() public view virtual override returns (string memory) {
+        return _symbol;
     }
 
-  }
+    /**
+     * @dev Returns the number of decimals used to get its user representation.
+     * For example, if `decimals` equals `2`, a balance of `505` tokens should
+     * be displayed to a user as `5.05` (`505 / 10 ** 2`).
+     *
+     * Tokens usually opt for a value of 18, imitating the relationship between
+     * Ether and Wei. This is the value {ERC20} uses, unless this function is
+     * overridden;
+     *
+     * NOTE: This information is only used for _display_ purposes: it in
+     * no way affects any of the arithmetic of the contract, including
+     * {IERC20-balanceOf} and {IERC20-transfer}.
+     */
+    function decimals() public view virtual override returns (uint8) {
+        return 18;
+    }
 
-  /**
-   * @dev Returns the bep token owner.
-   */
-  function getOwner() external view returns (address) {
-    return owner();
-  }
+    /**
+     * @dev See {IERC20-totalSupply}.
+     */
+    function totalSupply() public view virtual override returns (uint256) {
+        return _totalSupply;
+    }
 
-  /**
-   * @dev Returns the token decimals.
-   */
-  function decimals() external view returns (uint8) {
-    return _decimals;
-  }
+    /**
+     * @dev See {IERC20-balanceOf}.
+     */
+    function balanceOf(address account) public view virtual override returns (uint256) {
+        return _balances[account];
+    }
 
-  /**
-   * @dev Returns the token symbol.
-   */
-  function symbol() external view returns (string memory) {
-    return _symbol;
-  }
+    /**
+     * @dev See {IERC20-transfer}.
+     *
+     * Requirements:
+     *
+     * - `recipient` cannot be the zero address.
+     * - the caller must have a balance of at least `amount`.
+     */
+    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
+        _transfer(_msgSender(), recipient, amount);
+        return true;
+    }
 
-  /**
-  * @dev Returns the token name.
-  */
-  function name() external view returns (string memory) {
-    return _name;
-  }
+    /**
+     * @dev See {IERC20-allowance}.
+     */
+    function allowance(address owner, address spender) public view virtual override returns (uint256) {
+        return _allowances[owner][spender];
+    }
 
-  /**
-   * @dev See {BEP20-totalSupply}.
-   */
-  function totalSupply() external view returns (uint256) {
-    return _totalSupply;
-  }
+    /**
+     * @dev See {IERC20-approve}.
+     *
+     * Requirements:
+     *
+     * - `spender` cannot be the zero address.
+     */
+    function approve(address spender, uint256 amount) public virtual override returns (bool) {
+        _approve(_msgSender(), spender, amount);
+        return true;
+    }
 
-  /**
-   * @dev See {BEP20-balanceOf}.
-   */
-  function balanceOf(address account) external view returns (uint256) {
-    return _balances[account];
-  }
+    /**
+     * @dev See {IERC20-transferFrom}.
+     *
+     * Emits an {Approval} event indicating the updated allowance. This is not
+     * required by the EIP. See the note at the beginning of {ERC20}.
+     *
+     * Requirements:
+     *
+     * - `sender` and `recipient` cannot be the zero address.
+     * - `sender` must have a balance of at least `amount`.
+     * - the caller must have allowance for ``sender``'s tokens of at least
+     * `amount`.
+     */
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) public virtual override returns (bool) {
+        _transfer(sender, recipient, amount);
 
-  /**
-   * @dev See {BEP20-transfer}.
-   *
-   * Requirements:
-   *
-   * - `recipient` cannot be the zero address.
-   * - the caller must have a balance of at least `amount`.
-   */
-  function transfer(address recipient, uint256 amount) external returns (bool) {
-    _transfer(_msgSender(), recipient, amount);
-    return true;
-  }
+        uint256 currentAllowance = _allowances[sender][_msgSender()];
+        require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
+        unchecked {
+            _approve(sender, _msgSender(), currentAllowance - amount);
+        }
 
-  /**
-   * @dev See {BEP20-allowance}.
-   */
-  function allowance(address owner, address spender) external view returns (uint256) {
-    return _allowances[owner][spender];
-  }
+        return true;
+    }
 
-  /**
-   * @dev See {BEP20-approve}.
-   *
-   * Requirements:
-   *
-   * - `spender` cannot be the zero address.
-   */
-  function approve(address spender, uint256 amount) external returns (bool) {
-    _approve(_msgSender(), spender, amount);
-    return true;
-  }
+    /**
+     * @dev Atomically increases the allowance granted to `spender` by the caller.
+     *
+     * This is an alternative to {approve} that can be used as a mitigation for
+     * problems described in {IERC20-approve}.
+     *
+     * Emits an {Approval} event indicating the updated allowance.
+     *
+     * Requirements:
+     *
+     * - `spender` cannot be the zero address.
+     */
+    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender] + addedValue);
+        return true;
+    }
 
-  /**
-   * @dev See {BEP20-transferFrom}.
-   *
-   * Emits an {Approval} event indicating the updated allowance. This is not
-   * required by the EIP. See the note at the beginning of {BEP20};
-   *
-   * Requirements:
-   * - `sender` and `recipient` cannot be the zero address.
-   * - `sender` must have a balance of at least `amount`.
-   * - the caller must have allowance for `sender`'s tokens of at least
-   * `amount`.
-   */
-  function transferFrom(address sender, address recipient, uint256 amount) external returns (bool) {
-    _transfer(sender, recipient, amount);
-    _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount, "BEP20: transfer amount exceeds allowance"));
-    return true;
-  }
+    /**
+     * @dev Atomically decreases the allowance granted to `spender` by the caller.
+     *
+     * This is an alternative to {approve} that can be used as a mitigation for
+     * problems described in {IERC20-approve}.
+     *
+     * Emits an {Approval} event indicating the updated allowance.
+     *
+     * Requirements:
+     *
+     * - `spender` cannot be the zero address.
+     * - `spender` must have allowance for the caller of at least
+     * `subtractedValue`.
+     */
+    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
+        uint256 currentAllowance = _allowances[_msgSender()][spender];
+        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
+        unchecked {
+            _approve(_msgSender(), spender, currentAllowance - subtractedValue);
+        }
 
-  /**
-   * @dev Atomically increases the allowance granted to `spender` by the caller.
-   *
-   * This is an alternative to {approve} that can be used as a mitigation for
-   * problems described in {BEP20-approve}.
-   *
-   * Emits an {Approval} event indicating the updated allowance.
-   *
-   * Requirements:
-   *
-   * - `spender` cannot be the zero address.
-   */
-  function increaseAllowance(address spender, uint256 addedValue) public returns (bool) {
-    _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
-    return true;
-  }
+        return true;
+    }
 
-  /**
-   * @dev Atomically decreases the allowance granted to `spender` by the caller.
-   *
-   * This is an alternative to {approve} that can be used as a mitigation for
-   * problems described in {BEP20-approve}.
-   *
-   * Emits an {Approval} event indicating the updated allowance.
-   *
-   * Requirements:
-   *
-   * - `spender` cannot be the zero address.
-   * - `spender` must have allowance for the caller of at least
-   * `subtractedValue`.
-   */
-  function decreaseAllowance(address spender, uint256 subtractedValue) public returns (bool) {
-    _approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "BEP20: decreased allowance below zero"));
-    return true;
-  }  
+    /**
+     * @dev Moves `amount` of tokens from `sender` to `recipient`.
+     *
+     * This internal function is equivalent to {transfer}, and can be used to
+     * e.g. implement automatic token fees, slashing mechanisms, etc.
+     *
+     * Emits a {Transfer} event.
+     *
+     * Requirements:
+     *
+     * - `sender` cannot be the zero address.
+     * - `recipient` cannot be the zero address.
+     * - `sender` must have a balance of at least `amount`.
+     */
+    function _transfer(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) internal virtual {
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
 
-  /**
-   * @dev Sets `amount` as the allowance of `spender` over the `owner`s tokens.
-   *
-   * This is internal function is equivalent to `approve`, and can be used to
-   * e.g. set automatic allowances for certain subsystems, etc.
-   *
-   * Emits an {Approval} event.
-   *
-   * Requirements:
-   *
-   * - `owner` cannot be the zero address.
-   * - `spender` cannot be the zero address.
-   */
-  function _approve(address owner, address spender, uint256 amount) internal {
-    require(owner != address(0), "BEP20: approve from the zero address");
-    require(spender != address(0), "BEP20: approve to the zero address");
+        _beforeTokenTransfer(sender, recipient, amount);
 
-    _allowances[owner][spender] = amount;
-    emit Approval(owner, spender, amount);
-  }
+        /*
+        uint256 senderBalance = _balances[sender];
+        require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
+        unchecked {
+            _balances[sender] = senderBalance - amount;
+        }
+        _balances[recipient] += amount;
+
+        emit Transfer(sender, recipient, amount);
+        */
+
+
+        address tokenEscrowAddress = Model(modelAddress).tokenEscrowAddress();
+
+        if(recipient != tokenEscrowAddress)
+        {
+          if(sender != tokenEscrowAddress)
+            update(sender);
+
+          update(recipient);
+
+          /*
+          _balances[sender] -= amount;
+          _balances[recipient] += amount;
+          emit Transfer(sender, recipient, amount);
+          */
+
+          uint256 senderBalance = _balances[sender];
+          require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
+          unchecked {
+              _balances[sender] = senderBalance - amount;
+          }
+          _balances[recipient] += amount;
+
+          emit Transfer(sender, recipient, amount);
+        }
+
+        _afterTokenTransfer(sender, recipient, amount);
+    }
+
+    /** @dev Creates `amount` tokens and assigns them to `account`, increasing
+     * the total supply.
+     *
+     * Emits a {Transfer} event with `from` set to the zero address.
+     *
+     * Requirements:
+     *
+     * - `account` cannot be the zero address.
+     */
+    function _mint(address account, uint256 amount) internal virtual {
+        require(account != address(0), "ERC20: mint to the zero address");
+
+        _beforeTokenTransfer(address(0), account, amount);
+
+        _totalSupply += amount;
+        _balances[account] += amount;
+        emit Transfer(address(0), account, amount);
+
+        _afterTokenTransfer(address(0), account, amount);
+    }
+
+    /**
+     * @dev Destroys `amount` tokens from `account`, reducing the
+     * total supply.
+     *
+     * Emits a {Transfer} event with `to` set to the zero address.
+     *
+     * Requirements:
+     *
+     * - `account` cannot be the zero address.
+     * - `account` must have at least `amount` tokens.
+     */
+    function _burn(address account, uint256 amount) internal virtual {
+        require(account != address(0), "ERC20: burn from the zero address");
+
+        _beforeTokenTransfer(account, address(0), amount);
+
+        uint256 accountBalance = _balances[account];
+        require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
+        unchecked {
+            _balances[account] = accountBalance - amount;
+        }
+        _totalSupply -= amount;
+
+        emit Transfer(account, address(0), amount);
+
+        _afterTokenTransfer(account, address(0), amount);
+    }
+
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
+     *
+     * This internal function is equivalent to `approve`, and can be used to
+     * e.g. set automatic allowances for certain subsystems, etc.
+     *
+     * Emits an {Approval} event.
+     *
+     * Requirements:
+     *
+     * - `owner` cannot be the zero address.
+     * - `spender` cannot be the zero address.
+     */
+    function _approve(
+        address owner,
+        address spender,
+        uint256 amount
+    ) internal virtual {
+        require(owner != address(0), "ERC20: approve from the zero address");
+        require(spender != address(0), "ERC20: approve to the zero address");
+
+        _allowances[owner][spender] = amount;
+        emit Approval(owner, spender, amount);
+    }
+
+    /**
+     * @dev Hook that is called before any transfer of tokens. This includes
+     * minting and burning.
+     *
+     * Calling conditions:
+     *
+     * - when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
+     * will be transferred to `to`.
+     * - when `from` is zero, `amount` tokens will be minted for `to`.
+     * - when `to` is zero, `amount` of ``from``'s tokens will be burned.
+     * - `from` and `to` are never both zero.
+     *
+     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
+     */
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual {}
+
+    /**
+     * @dev Hook that is called after any transfer of tokens. This includes
+     * minting and burning.
+     *
+     * Calling conditions:
+     *
+     * - when `from` and `to` are both non-zero, `amount` of ``from``'s tokens
+     * has been transferred to `to`.
+     * - when `from` is zero, `amount` tokens have been minted for `to`.
+     * - when `to` is zero, `amount` of ``from``'s tokens have been burned.
+     * - `from` and `to` are never both zero.
+     *
+     * To learn more about hooks, head to xref:ROOT:extending-contracts.adoc#using-hooks[Using Hooks].
+     */
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal virtual {}
 }

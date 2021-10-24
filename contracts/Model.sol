@@ -1,4 +1,5 @@
-pragma solidity >=0.4.21 <0.6.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
 import "./math/SafeMath.sol";
 import './StableCoin.sol';
@@ -83,7 +84,7 @@ contract Model {
   uint[] public moderatorHandlingFeeBounds;
   uint[] public moderatorHandlingFeeRates;
 
-  constructor(address addr) public
+  constructor(address addr)
   {
     admins.push(addr);
 
@@ -405,8 +406,9 @@ contract Model {
       if(oldAdmin == admins[i])
       {
         admins[i] = admins[admins.length - 1];
-        delete admins[admins.length - 1];
-        admins.length--;
+        //delete admins[admins.length - 1];
+        //admins.length--;
+        admins.pop();
 
         break;
       }
@@ -430,8 +432,9 @@ contract Model {
       if(moderators[i] == moderator)
       {
         moderators[i] = moderators[moderators.length - 1];
-        delete moderators[moderators.length - 1];
-        moderators.length--;
+        //delete moderators[moderators.length - 1];
+        //moderators.length--;
+        moderators.pop();
 
         break;
       }
@@ -476,8 +479,9 @@ contract Model {
       if(customizedControllers[i] == controller)
       {
         customizedControllers[i] = customizedControllers[customizedControllers.length - 1];
-        delete customizedControllers[customizedControllers.length - 1];
-        customizedControllers.length--;
+        //delete customizedControllers[customizedControllers.length - 1];
+        //customizedControllers.length--;
+        customizedControllers.pop();
 
         break;
       }
@@ -522,8 +526,9 @@ contract Model {
       if(customizedModels[i] == model)
       {
         customizedModels[i] = customizedModels[customizedModels.length - 1];
-        delete customizedModels[customizedModels.length - 1];
-        customizedModels.length--;
+        //delete customizedModels[customizedModels.length - 1];
+        //customizedModels.length--;
+        customizedModels.pop();
 
         break;
       }
@@ -593,6 +598,7 @@ contract Model {
     require(localIndex < refereeDeals[referee].length);
 
     refereeDeals[referee][localIndex] = refereeDeals[referee][refereeDeals[referee].length - 1];
-    refereeDeals[referee].length--;
+    //refereeDeals[referee].length--;
+    refereeDeals[referee].pop();
   }
 }
