@@ -137,10 +137,9 @@ contract OrderSettlementController {
     require(MarketplaceController(Model(modelAddress).marketplaceControllerAddress()).isSellerBanned(seller) != true && !productController.isItemBanned(igi - 1), 'Seller or item is banned.');
     
     StableCoin stableCoin = StableCoin(Model(modelAddress).stableCoinAddress());
-    //Token delaToken = Token(Model(modelAddress).tokenAddress());
 
-    //uint decimalFactor = 10 ** uint(delaToken.decimals() - stableCoin.decimals());
-    require(totalUSDInWei <= stableCoin.balanceOf(msg.sender).mul(10 ** 12), 'Not enough balance for paying.');
+    //require(totalUSDInWei <= stableCoin.balanceOf(msg.sender).mul(10 ** 12), 'Not enough balance for paying.');
+    require(totalUSDInWei <= stableCoin.balanceOf(msg.sender).mul(Model(modelAddress).staleCoinDecimalDifferencePowered()), 'Not enough balance for paying.');
 
     //addDeal(seller, igi, buyerNote, quantity, referee, moderator, totalUSDInWei);
     /*
@@ -194,7 +193,7 @@ contract OrderSettlementController {
     ProductController(Model(modelAddress).productControllerAddress()).minusProductQuantity(igi, quantity);
     EventModel(Model(modelAddress).eventModelAddress()).onDealCreatedEmit(dealIndex, seller, tx.origin, buyerNote);   
 
-    stableCoin.transferFrom(msg.sender, Model(modelAddress).orderEscrowAddress(), totalUSDInWei.div(10 ** 12));
+    stableCoin.transferFrom(msg.sender, Model(modelAddress).orderEscrowAddress(), totalUSDInWei.div(Model(modelAddress).staleCoinDecimalDifferencePowered()));
   }
 
   /*

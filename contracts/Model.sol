@@ -2,7 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "./math/SafeMath.sol";
-import './StableCoin.sol';
+import "./StableCoin.sol";
+import "./Token.sol";
 
 /*
 ------------------------------------------------------------------------------------
@@ -83,6 +84,9 @@ contract Model {
   // handling fee percentage for dispute handled by moderator
   uint[] public moderatorHandlingFeeBounds;
   uint[] public moderatorHandlingFeeRates;
+
+  uint public staleCoinDecimalDifference;
+  uint public staleCoinDecimalDifferencePowered;
 
   constructor(address addr)
   {
@@ -187,6 +191,9 @@ contract Model {
   {
     require(stableCoinAddress == address(0), "stable coin already set");
     stableCoinAddress = addr;
+
+    staleCoinDecimalDifference = 18 - StableCoin(stableCoinAddress).decimals();
+    staleCoinDecimalDifferencePowered = 10 ** staleCoinDecimalDifference;
   }
 
   // set DELA token contract address, once only
