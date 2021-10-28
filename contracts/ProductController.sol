@@ -77,7 +77,7 @@ contract ProductController {
     require(client != address(0));
 
     uint igi = ProductModel(Model(modelAddress).productModelAddress()).getItemGlobalIndex(msg.sender, localItemIndex);
-    
+
     ProductModel(Model(modelAddress).productModelAddress()).addItemDiscount(igi, client, discountRate, details);
     EventModel(Model(modelAddress).eventModelAddress()).onAddDiscountToClientEmit(msg.sender, client, igi, discountRate, details);
   }
@@ -351,6 +351,7 @@ contract ProductController {
 
     require(model.getItemCategory(igi.sub(1)) != 0);
 
+    model.addHashTag(lowerCaseHash, igi, tag, isEnabled);
     EventModel(Model(modelAddress).eventModelAddress()).onSetItemTagEmit(igi, lowerCaseHash, originalHash, tag, isEnabled);
   }
 

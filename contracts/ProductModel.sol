@@ -56,6 +56,9 @@ contract ProductModel {
   // batch purchase offers for items
   mapping (uint => bytes) public batchOffers;
 
+  // hash tags for items
+  mapping (bytes32 => SharedStructs.HashTag[]) public hashTags;
+
   constructor(address addr)
   {
     modelAddress = addr;
@@ -65,6 +68,30 @@ contract ProductModel {
   // Data access
   // ------------------------------------------------------------------------------------  
 
+  function addHashTag(bytes32 lowerCaseHash, uint igi, bytes calldata tag, bool isEnabled) external productControllerOnly
+  {
+    SharedStructs.HashTag memory hashTag;
+    hashTag.igi = igi;
+    hashTag.tag = tag;
+    hashTag.isEnabled = isEnabled;
+
+    hashTags[lowerCaseHash].push(hashTag);
+  }
+
+  function enableTag(bytes32 lowerCaseHash, uint igi, bool isEnabled) external productControllerOnly
+  {
+    SharedStructs.HashTag[] storage tags = hashTags[lowerCaseHash];
+
+    for(uint i = 0; i < tags.length; i++)
+    {
+      if(igi == tags[i].igi)
+      {
+        tags[i].isEnabled = isEnabled;
+        break;
+      }
+    }
+  }
+
   function addItemDiscount(uint igi, address client, uint8 discountRate, bytes calldata additional) external productControllerOnly
   {
     require(client != address(0));
@@ -73,6 +100,7 @@ contract ProductModel {
     discount.client = client;
     discount.discountRate = discountRate;
     discount.additional = additional;
+
     itemDiscounts[igi].push(discount);
   }
 

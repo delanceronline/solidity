@@ -86,4 +86,12 @@ library SharedStructs {
     uint8 discountRate;
     bytes additional;
   }
+
+  // hash tag structure
+  struct HashTag
+  {
+    uint igi;
+    bytes tag;
+    bool isEnabled;
+  }
 }
