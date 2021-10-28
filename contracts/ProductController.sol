@@ -72,10 +72,12 @@ contract ProductController {
   // ------------------------------------------------------------------------------------
 
   // add a discount offer for a buyer to a specific item
-  function addClientDiscount(address client, uint igi, uint8 discountRate, bytes calldata details) external
+  function addClientDiscount(address client, uint localItemIndex, uint8 discountRate, bytes calldata details) external
   {
     require(client != address(0));
 
+    uint igi = ProductModel(Model(modelAddress).productModelAddress()).getItemGlobalIndex(msg.sender, localItemIndex);
+    
     ProductModel(Model(modelAddress).productModelAddress()).addItemDiscount(igi, client, discountRate, details);
     EventModel(Model(modelAddress).eventModelAddress()).onAddDiscountToClientEmit(msg.sender, client, igi, discountRate, details);
   }
