@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "./math/SafeMath.sol";
 import './Model.sol';
 import './EventModel.sol';
+import './SharedStructs.sol';
 
 /*
 ------------------------------------------------------------------------------------
@@ -34,37 +35,26 @@ contract ProductModel {
 
   }
 
-  // item's structure
-  struct Item
-  {
-    uint8 category;                             // category index
-    uint priceUSD;                              // listed price in pegged USD
-    bool isActive;                              // active flag
-    bytes title;                                // title of the item
-    uint dealCount;                             // number of deals made
-    uint ratingScore;                           // rating score by buyers
-    uint quantityLeft;                          // number of items available
-    bool isQuantityLimited;                     // unlimited flag
-    bool isDealPrivate;                         // private deal flag
-    bool isBanned;                              // ban flag
-    uint noDisputePeriod;                       // number of blocks as a period which is eligible for raising a dispute of a deal
-    uint shippingPeriod;                        // the time limit which the merchant has to ship the item, in number of blocks
-    uint creationBlockNumber;                   // the block number at which the deal was created
-    uint validBlockCount;                       // the number of blocks which after that the item will become available for deal request
-    //mapping (address => bool) allowedClients;   // the item is only available to those who are inside the list, if it is non empty
-  }
-
   // the item is only available to those who are inside the list, if it is non empty
   mapping (uint => mapping (address => bool)) public allowedClients;
 
   // item list
-  Item[] public listedItems;
+  SharedStructs.Item[] public listedItems;
 
   // store the global item indice of a vendor
   mapping (address => uint[]) public itemOwners;
   
   // store the item indice of a category
   mapping (uint8 => uint[]) public itemCategories;
+
+  // store item details
+  mapping (uint => bytes) public itemDetails;
+
+  // item discounts for users
+  mapping (uint => SharedStructs.ItemDiscount[]) public itemDiscounts;
+
+  // batch purchase offers for items
+  mapping (uint => bytes) public batchOffers;
 
   constructor(address addr)
   {
@@ -73,7 +63,71 @@ contract ProductModel {
 
   // ------------------------------------------------------------------------------------   
   // Data access
-  // ------------------------------------------------------------------------------------
+  // ------------------------------------------------------------------------------------  
+
+  function addItemDiscount(uint igi, address client, uint8 discountRate, bytes calldata additional) external productControllerOnly
+  {
+    require(client != address(0));
+
+    SharedStructs.ItemDiscount memory discount;
+    discount.client = client;
+    discount.discountRate = discountRate;
+    discount.additional = additional;
+    itemDiscounts[igi].push(discount);
+  }
+
+  function getItemDiscounts(uint igi) external view productControllerOnly returns (SharedStructs.ItemDiscount[] memory)
+  {
+    return itemDiscounts[igi];
+  }
+
+  function editItemDiscount(uint igi, address client, uint8 discountRate, bytes calldata additional) external productControllerOnly
+  {
+    require(client != address(0));
+
+    SharedStructs.ItemDiscount[] storage discounts = itemDiscounts[igi];
+
+    for(uint i = 0; i < discounts.length; i++)
+    {
+      if(client == discounts[i].client)
+      {
+        discounts[i].discountRate = discountRate;
+        discounts[i].additional = additional;
+
+        break;
+      }
+    }
+  }
+
+  function addBatchOffer(uint igi, bytes calldata details) external productControllerOnly
+  {
+    batchOffers[igi] = details;
+  }
+
+  function getBatchOffer(uint igi) external view productControllerOnly returns (bytes memory)
+  {
+    return batchOffers[igi];
+  }
+
+  function setBatchOffer(uint igi, bytes calldata details) external productControllerOnly
+  {
+    batchOffers[igi] = details;
+  }
+
+  function getAllItems() external view returns (SharedStructs.Item[] memory)
+  {
+    return listedItems;
+  }
+
+  function getItemIndices(address owner) external view returns (uint[] memory)
+  {
+    return itemOwners[owner];
+  }
+
+  function setItemDetail(uint igi, bytes calldata detail) external productControllerOnly
+  {
+    itemDetails[igi] = detail;
+  }
 
   // get the category index of am item
   function getItemCategory(uint globalItemIndex) external view returns (uint8)
@@ -216,9 +270,9 @@ contract ProductModel {
   // add a new item to the list in product model
   function addItem(uint8 category, uint priceUSD, bytes calldata title, uint quantityLeft, bool isQuantityLimited, uint noDisputePeriod, uint shippingPeriod, uint validBlockCount) external productControllerOnly
   {
-    listedItems.push(Item(category, priceUSD, true, title, 0, 0, quantityLeft, isQuantityLimited, false, false, noDisputePeriod, shippingPeriod, block.number, validBlockCount));
-    /*
-    Item memory item;
+    //listedItems.push(SharedStructs.Item(category, priceUSD, true, title, '', 0, 0, quantityLeft, isQuantityLimited, false, false, noDisputePeriod, shippingPeriod, block.number, validBlockCount));
+    
+    SharedStructs.Item memory item;
     item.category = category;
     item.priceUSD = priceUSD;
     item.isActive = true;
@@ -234,7 +288,7 @@ contract ProductModel {
     item.creationBlockNumber = block.number;
     item.validBlockCount = validBlockCount;
     listedItems.push(item);
-    */
+    
   }
 
   // set item category index of an item
@@ -384,7 +438,6 @@ contract ProductModel {
     require(position < itemCategories[category].length);
 
     itemCategories[category][position] = itemCategories[category][itemCategories[category].length.sub(1)];
-    //itemCategories[category].length--;
     itemCategories[category].pop();
   }
 
@@ -406,7 +459,7 @@ contract ProductModel {
   // get an item by given a global item index
   function getItemByGlobalIndex(uint igi) public view returns (uint8, uint, bool, bytes memory, uint, uint, uint, bool, uint, uint){
 
-    Item storage item = listedItems[igi];
+    SharedStructs.Item storage item = listedItems[igi];
     require(item.category != 0);
     
     return (item.category, item.priceUSD, item.isActive, item.title, item.dealCount, item.ratingScore, item.quantityLeft, item.isQuantityLimited, item.creationBlockNumber, item.validBlockCount);
@@ -415,7 +468,7 @@ contract ProductModel {
   // increase the quantity left of an item
   function plusProductQuantity(uint igi, uint count) external productControllerOnly
   {
-    Item storage item = listedItems[igi];
+    SharedStructs.Item storage item = listedItems[igi];
     require(item.category != 0);
 
     item.quantityLeft = item.quantityLeft.add(count);
@@ -424,7 +477,7 @@ contract ProductModel {
   // decrease the quantity left of an item
   function minusProductQuantity(uint igi, uint count) external productControllerOnly
   {
-    Item storage item = listedItems[igi];
+    SharedStructs.Item storage item = listedItems[igi];
     require(item.category != 0);
 
     if(item.quantityLeft < count)

@@ -34,10 +34,10 @@ contract EventModel {
   event onPushMarketPGPPublicKey(string publicKey);
 
   // emitted when a marketplace announcement added
-  event onPushAnnouncement(uint indexed id, bytes title, bytes message);
+  event onPushAnnouncement(uint indexed id, bytes title, bytes message, bool isEnabled);
 
   // emitted when a marketplace announcement edited
-  event onModifyAnnouncement(uint indexed id, uint8 operator, bytes details);
+  event onModifyAnnouncement(uint indexed id, bytes title, bytes message, bool isEnabled);
 
   // emitted when item's detail added
   event onAddItemDetails(uint indexed igi, uint id, bytes details);
@@ -111,15 +111,15 @@ contract EventModel {
 
   }
 
-  function onPushAnnouncementEmit(uint id, bytes calldata title, bytes calldata message) controllerOnly external{
+  function onPushAnnouncementEmit(uint id, bytes calldata title, bytes calldata message, bool isEnabled) controllerOnly external{
 
-    emit onPushAnnouncement(id, title, message);
+    emit onPushAnnouncement(id, title, message, isEnabled);
 
   }
 
-  function onModifyAnnouncementEmit(uint id, uint8 operator, bytes calldata details) controllerOnly external{
+  function onModifyAnnouncementEmit(uint id, bytes calldata title, bytes calldata message, bool isEnabled) controllerOnly external{
 
-    emit onModifyAnnouncement(id, operator, details);
+    emit onModifyAnnouncement(id, title, message, isEnabled);
 
   }
 

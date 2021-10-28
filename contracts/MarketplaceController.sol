@@ -137,24 +137,28 @@ contract MarketplaceController {
   // set marketplace's PGP public key
   function setMarketPublicPGP(string calldata publicPGP) adminOnly external
   {
+    Model(modelAddress).setMarketPGPPublicKey(publicPGP);
     EventModel(Model(modelAddress).eventModelAddress()).onPushMarketPGPPublicKeyEmit(publicPGP);
   }
 
   // add a new marketplace announcement
   function pushAnnouncement(uint id, bytes calldata title, bytes calldata message) adminOnly external
   {
-    EventModel(Model(modelAddress).eventModelAddress()).onPushAnnouncementEmit(id, title, message);
+    Model(modelAddress).addMarketAnnouncement(title, message);
+    EventModel(Model(modelAddress).eventModelAddress()).onPushAnnouncementEmit(id, title, message, true);
   }
 
   // update an existing announcement
-  function modifyAnnouncement(uint id, uint8 operator, bytes calldata details) adminOnly external
+  function editAnnouncement(uint id, bytes calldata title, bytes calldata message, bool isEnabled) adminOnly external
   {
-    EventModel(Model(modelAddress).eventModelAddress()).onModifyAnnouncementEmit(id, operator, details);
+    Model(modelAddress).editMarketAnnouncement(id, title, message, isEnabled);
+    EventModel(Model(modelAddress).eventModelAddress()).onModifyAnnouncementEmit(id, title, message, isEnabled);
   }
 
   // set an item as a featured one
   function setFeaturedItem(uint igi, bool isEnabled) adminOnly external
   {
+    Model(modelAddress).addFeaturedItem(igi);
     EventModel(Model(modelAddress).eventModelAddress()).onSetFeaturedItemEmit(igi, isEnabled);
   }
 
@@ -162,6 +166,7 @@ contract MarketplaceController {
   function setFeaturedVendor(address vendor, bool isEnabled) adminOnly external
   {
     require(vendor != address(0));
+    Model(modelAddress).addFeaturedVendor(vendor);
     EventModel(Model(modelAddress).eventModelAddress()).onSetFeaturedVendorEmit(vendor, isEnabled);
   }
 
@@ -221,9 +226,10 @@ contract MarketplaceController {
   // ------------------------------------------------------------------------------------
 
   // add an user profile
-  function addProfile(bytes calldata nickName, bytes32 nickNameHash, bytes calldata about, string calldata publicPGP, bytes calldata additional) external
+  function addProfile(bytes calldata nickName, bytes32 nickNameHash, bytes calldata about, string calldata publicOpenPGPKey, bytes calldata additional) external
   {
-    EventModel(Model(modelAddress).eventModelAddress()).onAddUserProfileEmit(msg.sender, nickNameHash, nickName, about, publicPGP, additional);
+    Model(modelAddress).addUserProfile(msg.sender, nickName, about, publicOpenPGPKey, additional);
+    EventModel(Model(modelAddress).eventModelAddress()).onAddUserProfileEmit(msg.sender, nickNameHash, nickName, about, publicOpenPGPKey, additional);
   }
 
   // check if a seller is banned
@@ -238,6 +244,8 @@ contract MarketplaceController {
   function setFavourSeller(address seller, bool isEnabled) external
   {
     require(seller != address(0));
+
+    Model(modelAddress).addFavourUser(msg.sender, seller);
     EventModel(Model(modelAddress).eventModelAddress()).onSetFavourSellerEmit(msg.sender, seller, isEnabled);
   }
 
@@ -250,6 +258,33 @@ contract MarketplaceController {
   // ------------------------------------------------------------------------------------
   // Marketplace setting
   // ------------------------------------------------------------------------------------
+
+  function getFeaturedItemIndices() external view returns (uint[] memory)
+  {
+    return Model(modelAddress).getFeaturedItemIndices();
+  }
+
+  function getFeaturedVendors() external view returns (address[] memory)
+  {
+    return Model(modelAddress).getFeaturedVendors();
+  }
+
+  function getFavourUsers(address owner) external view returns (address[] memory)
+  {
+    return Model(modelAddress).getFavourUsers(owner);
+  }
+
+  function getMarketPGPPublicKey() external view returns (string memory)
+  {
+    return Model(modelAddress).marketPGPPublicKey();
+  }
+
+  function getMarketAnnouncements() external view returns (SharedStructs.Announcement[] memory)
+  {
+    return Model(modelAddress).getMarketAnnouncements();
+  }
+
+
 
   // add a bound for a turnover tier of marketplace's commission
   function addMarketplaceCommissionBound(uint value) external adminOnly

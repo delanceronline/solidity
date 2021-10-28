@@ -9,6 +9,7 @@ import './StableCoin.sol';
 import './Token.sol';
 import './TokenEscrow.sol';
 import './OrderEscrow.sol';
+import './SharedStructs.sol';
 
 /*
 ------------------------------------------------------------------------------------
@@ -53,6 +54,19 @@ contract ProductController {
     modelAddress = addr;
   }
   
+
+  function getAllItems() external view returns (SharedStructs.Item[] memory)
+  {
+    ProductModel model = ProductModel(Model(modelAddress).productModelAddress());
+    return model.getAllItems();
+  }
+
+  function getItemIndices(address owner) external view returns (uint[] memory)
+  {
+    ProductModel model = ProductModel(Model(modelAddress).productModelAddress());
+    return model.getItemIndices(owner);
+  }
+
   // ------------------------------------------------------------------------------------
   // User setting
   // ------------------------------------------------------------------------------------
@@ -62,6 +76,7 @@ contract ProductController {
   {
     require(client != address(0));
 
+    ProductModel(Model(modelAddress).productModelAddress()).addItemDiscount(igi, client, discountRate, details);
     EventModel(Model(modelAddress).eventModelAddress()).onAddDiscountToClientEmit(msg.sender, client, igi, discountRate, details);
   }
 
@@ -69,6 +84,8 @@ contract ProductController {
   function addBatchOffer(uint localItemIndex, bytes calldata details) external
   {
     uint igi = ProductModel(Model(modelAddress).productModelAddress()).getItemGlobalIndex(msg.sender, localItemIndex);
+
+    ProductModel(Model(modelAddress).productModelAddress()).addBatchOffer(igi, details);
     EventModel(Model(modelAddress).eventModelAddress()).onAddBatchOfferEmit(igi, details);
   }
 
@@ -260,6 +277,8 @@ contract ProductController {
 
     if(model.getItemCategory(igi.sub(1)) > 0)
     {
+      model.setItemDetail(igi, details);
+
       EventModel(Model(modelAddress).eventModelAddress()).onAddItemDetailsEmit(igi, localItemIndex, details);
     }
   }
@@ -363,6 +382,8 @@ contract ProductController {
     uint igi = model.getTotalItemCount();
     model.addItemIndex(msg.sender, igi);
     model.addItemIndexToCategory(category, igi);
+
+    model.setItemDetail(igi, details);
 
     EventModel(Model(modelAddress).eventModelAddress()).onAddItemDetailsEmit(igi, model.getItemCount(msg.sender).sub(1), details);
     EventModel(Model(modelAddress).eventModelAddress()).onSetItemOfCategoryEmit(category, igi, title, true);

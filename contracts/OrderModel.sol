@@ -6,6 +6,7 @@ import './Model.sol';
 import './EventModel.sol';
 import './ProductModel.sol';
 import './Token.sol';
+import './SharedStructs.sol';
 
 /*
 ------------------------------------------------------------------------------------
@@ -14,49 +15,6 @@ This is the model for the orders handling which is mainly accessible by the orde
 
 ------------------------------------------------------------------------------------
 */
-
-library SharedStructs {
-
-  // deal structure
-  struct Deal{
-
-    //0: buyer
-    //1: seller
-    //2: referee
-    //3: moderator
-    address[4] roles;
-
-    
-    //0: activationTime
-    //1: shippedTime
-    //2: acceptionTime
-    //3: disputeExpiredDuration
-    //4: totalDisputeExpiredDuration
-    //5: itemGlobalIndex
-    //6: quantity
-    //7: amountTotal
-    //8: market commission percent
-    //9: shippingPeriod in blocks
-    //10: moderator handling fee percent
-    uint[11] numericalData;
-
-
-    //0: isExtendingDealAllowed
-    //1: isShipped
-    //2: isFinalized
-    //3: isCancelled
-    //4: isAccepted
-    //5: isDisputed
-    //6: isDisputeResolved
-    //7: shouldRefund
-    //8: isRatedAndReviewedByBuyer
-    //9: isRatedAndReviewedBySeller
-    //10: isDirectDeal
-    bool[11] flags;
-    
-  }
-
-}
 
 contract OrderModel {
 
@@ -99,6 +57,16 @@ contract OrderModel {
   // ------------------------------------------------------------------------------------   
   // Data access
   // ------------------------------------------------------------------------------------
+
+  function getAllDeals() external view orderControllerOnly returns (SharedStructs.Deal[] memory)
+  {
+    return deals;
+  }
+
+  function getDeals(address owner) external view orderControllerOnly returns (uint[] memory)
+  {
+    return dealOwners[owner];
+  }
 
   // get the number of deals made globally
   function getTotalDealCount() external view returns (uint)
@@ -222,7 +190,7 @@ contract OrderModel {
     return deals.length - 1;
   }
   */
-  
+
   function addDeal(SharedStructs.Deal calldata deal) external orderControllerOnly returns (uint)
   {
     deals.push(deal);

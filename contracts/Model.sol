@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 import "./math/SafeMath.sol";
 import "./StableCoin.sol";
 import "./Token.sol";
+import "./SharedStructs.sol";
 
 /*
 ------------------------------------------------------------------------------------
@@ -38,7 +39,7 @@ contract Model {
   address public eventModelAddress;
   address public productModelAddress;
   address public orderModelAddress;
-  
+    
   // reserved for future addons
   address[] public customizedControllers;
   address[] public customizedModels;
@@ -85,8 +86,19 @@ contract Model {
   uint[] public moderatorHandlingFeeBounds;
   uint[] public moderatorHandlingFeeRates;
 
+  uint[] public featuredItemIndices;
+  address[] public featuredVendors;
+
+  mapping(address => address[]) public favourUsers;
+  mapping(address => uint[]) public favourItems;
+
   uint public staleCoinDecimalDifference;
   uint public staleCoinDecimalDifferencePowered;
+
+  string public marketPGPPublicKey;
+
+  SharedStructs.Announcement[] public marketAnnouncements;
+  mapping(address => SharedStructs.UserProfile) public userProfiles;
 
   constructor(address addr)
   {
@@ -253,9 +265,184 @@ contract Model {
     marketContact = contact;
   }
 
+  function setMarketPGPPublicKey(string calldata key) marketPlaceControllerOnly external
+  {
+    marketPGPPublicKey = key;
+  }
+
   // ------------------------------------------------------------------------------------
   // Marketplace setting
   // ------------------------------------------------------------------------------------
+
+  function addUserProfile(address user, bytes calldata nickName, bytes calldata about, string calldata publicOpenPGPKey, bytes calldata additional) external marketPlaceControllerOnly
+  {
+    require(user != address(0));
+
+    SharedStructs.UserProfile memory userProfile;
+    userProfile.nickName = nickName;
+    userProfile.about = about;
+    userProfile.publicOpenPGPKey = publicOpenPGPKey;
+    userProfile.additional = additional;
+
+    userProfiles[user] = userProfile;
+  }
+
+  function getUserProfile(address user) external view marketPlaceControllerOnly returns (SharedStructs.UserProfile memory)
+  {
+    require(user != address(0));
+
+    return userProfiles[user];
+  }
+
+  function editUserProfile(address user, bytes calldata nickName, bytes calldata about, string calldata publicOpenPGPKey, bytes calldata additional) external marketPlaceControllerOnly
+  {
+    require(user != address(0));
+
+    SharedStructs.UserProfile storage userProfile = userProfiles[user];
+    userProfile.nickName = nickName;
+    userProfile.about = about;
+    userProfile.publicOpenPGPKey = publicOpenPGPKey;
+    userProfile.additional = additional;
+  }
+
+  function addMarketAnnouncement(bytes calldata title, bytes calldata message) external marketPlaceControllerOnly
+  {
+    SharedStructs.Announcement memory announcement;
+    announcement.title = title;
+    announcement.message = message;
+    announcement.blockNumber = block.number;
+    announcement.isEnabled = true;
+
+    marketAnnouncements.push(announcement);
+  }
+
+  function editMarketAnnouncement(uint index, bytes calldata title, bytes calldata message, bool isEnabled) external marketPlaceControllerOnly
+  {
+    require(index < marketAnnouncements.length, 'index is out of bound');
+
+    SharedStructs.Announcement storage announcement = marketAnnouncements[index];
+    announcement.title = title;
+    announcement.message = message;
+    announcement.blockNumber = block.number;
+    announcement.isEnabled = isEnabled;
+  }
+
+  function getMarketAnnouncements() external view marketPlaceControllerOnly returns (SharedStructs.Announcement[] memory)
+  {
+    return marketAnnouncements;
+  }
+
+  function addFavourItem(address owner, uint igi) external marketPlaceControllerOnly
+  {
+    require(owner != address(0));
+
+    favourItems[owner].push(igi);
+  }
+
+  function removeFavourItem(address owner, uint igi) external marketPlaceControllerOnly
+  {
+    require(owner != address(0));
+
+    for(uint i = 0; i < favourItems[owner].length; i++)
+    {
+      if(igi == favourItems[owner][i])
+      {
+        favourItems[owner][i] = favourItems[owner][favourItems[owner].length - 1];
+        favourItems[owner].pop();
+
+        break;
+      }
+    }
+  }
+
+  function getFavourItems(address owner) external view marketPlaceControllerOnly returns (uint[] memory)
+  {
+    require(owner != address(0));
+
+    return favourItems[owner];
+  }
+
+  function addFavourUser(address owner, address user) external marketPlaceControllerOnly
+  {
+    require(owner != address(0));
+
+    favourUsers[owner].push(user);
+  }
+
+  function removeFavourUser(address owner, address user) external marketPlaceControllerOnly
+  {
+    require(owner != address(0));
+
+    for(uint i = 0; i < favourUsers[owner].length; i++)
+    {
+      if(user == favourUsers[owner][i])
+      {
+        favourUsers[owner][i] = favourUsers[owner][favourUsers[owner].length - 1];
+        favourUsers[owner].pop();
+
+        break;
+      }
+    }
+  }
+
+  function getFavourUsers(address owner) external view marketPlaceControllerOnly returns (address[] memory)
+  {
+    require(owner != address(0));
+
+    return favourUsers[owner];
+  }
+
+  function addFeaturedItem(uint igi) external marketPlaceControllerOnly
+  {
+    featuredItemIndices.push(igi);
+  }
+
+  function removeFeaturedItem(uint igi) external marketPlaceControllerOnly
+  {
+    for(uint i = 0; i < featuredItemIndices.length; i++)
+    {
+      if(igi == featuredItemIndices[i])
+      {
+        featuredItemIndices[i] = featuredItemIndices[featuredItemIndices.length - 1];
+        featuredItemIndices.pop();
+
+        break;
+      }
+    }
+  }
+
+  function getFeaturedItemIndices() external view marketPlaceControllerOnly returns (uint[] memory)
+  {
+    return featuredItemIndices;
+  }
+
+  function addFeaturedVendor(address vendor) external marketPlaceControllerOnly
+  {
+    require(vendor != address(0));
+
+    featuredVendors.push(vendor);
+  }
+
+  function removeFeaturedVendor(address vendor) external marketPlaceControllerOnly
+  {
+    require(vendor != address(0));
+
+    for(uint i = 0; i < featuredVendors.length; i++)
+    {
+      if(vendor == featuredVendors[i])
+      {
+        featuredVendors[i] = featuredVendors[featuredVendors.length - 1];
+        featuredVendors.pop();
+
+        break;
+      }
+    }
+  }
+
+  function getFeaturedVendors() external view marketPlaceControllerOnly returns (address[] memory)
+  {
+    return featuredVendors;
+  }
 
   // add a bound for a turnover tier of marketplace's commission
   function addMarketplaceCommissionBound(uint value) controllerOnly public
@@ -413,8 +600,6 @@ contract Model {
       if(oldAdmin == admins[i])
       {
         admins[i] = admins[admins.length - 1];
-        //delete admins[admins.length - 1];
-        //admins.length--;
         admins.pop();
 
         break;
@@ -439,8 +624,6 @@ contract Model {
       if(moderators[i] == moderator)
       {
         moderators[i] = moderators[moderators.length - 1];
-        //delete moderators[moderators.length - 1];
-        //moderators.length--;
         moderators.pop();
 
         break;
