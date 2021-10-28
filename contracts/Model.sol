@@ -99,6 +99,7 @@ contract Model {
 
   SharedStructs.Announcement[] public marketAnnouncements;
   mapping(address => SharedStructs.UserProfile) public userProfiles;
+  mapping(address => SharedStructs.PrivateMessage[]) public privateMessages;
 
   constructor(address addr)
   {
@@ -273,6 +274,34 @@ contract Model {
   // ------------------------------------------------------------------------------------
   // Marketplace setting
   // ------------------------------------------------------------------------------------
+
+  function addPrivateMessage(address sender, address receiver, bytes calldata details) external marketPlaceControllerOnly
+  {
+    require(receiver != address(0));
+
+    SharedStructs.PrivateMessage memory pm;
+    pm.sender = sender;
+    pm.details = details;
+    pm.isRead = false;
+
+    privateMessages[receiver].push(pm);
+  }
+
+  function getPrivateMessages(address receiver) external view marketPlaceControllerOnly returns (SharedStructs.PrivateMessage[] memory)
+  {
+    require(receiver != address(0));
+
+    return privateMessages[receiver];
+  }
+
+  function setPrivateMessageRead(address receiver, uint index, bool isRead) external marketPlaceControllerOnly
+  {
+    require(receiver != address(0));
+    require(index < privateMessages[receiver].length, 'index is out of bound');
+
+    SharedStructs.PrivateMessage storage message = privateMessages[receiver][index];
+    message.isRead = isRead;
+  }
 
   function addUserProfile(address user, bytes calldata nickName, bytes calldata about, string calldata publicOpenPGPKey, bytes calldata additional) external marketPlaceControllerOnly
   {

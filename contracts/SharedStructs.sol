@@ -94,4 +94,12 @@ library SharedStructs {
     bytes tag;
     bool isEnabled;
   }
+
+  // private message struct
+  struct PrivateMessage
+  {
+    address sender;
+    bytes details;
+    bool isRead;
+  }
 }
