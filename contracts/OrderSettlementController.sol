@@ -73,6 +73,8 @@ contract OrderSettlementController {
 
     // update deal rating and review
     orderModel.setDealFlag(dealIndex, 8, true);
+    orderModel.addDealVote(orderModel.getDealRole(dealIndex, 1), orderModel.getDealRole(dealIndex, 0), orderModel.getDealNumericalData(dealIndex, 5), dealIndex, rating, review);
+
     EventModel(Model(modelAddress).eventModelAddress()).onDealRatedByBuyerEmit(orderModel.getDealRole(dealIndex, 1), orderModel.getDealNumericalData(dealIndex, 5), dealIndex, orderModel.getDealRole(dealIndex, 0), rating, review);
     ProductController(Model(modelAddress).productControllerAddress()).addItemDealCountByOne(orderModel.getDealNumericalData(dealIndex, 5));
     ProductController(Model(modelAddress).productControllerAddress()).addItemRatingScore(orderModel.getDealNumericalData(dealIndex, 5), rating);
@@ -138,38 +140,8 @@ contract OrderSettlementController {
     
     StableCoin stableCoin = StableCoin(Model(modelAddress).stableCoinAddress());
 
-    //require(totalUSDInWei <= stableCoin.balanceOf(msg.sender).mul(10 ** 12), 'Not enough balance for paying.');
     require(totalUSDInWei <= stableCoin.balanceOf(msg.sender).mul(Model(modelAddress).staleCoinDecimalDifferencePowered()), 'Not enough balance for paying.');
-
-    //addDeal(seller, igi, buyerNote, quantity, referee, moderator, totalUSDInWei);
-    /*
-    (, , bool isActive, , , , uint quantityLeft, bool isLimited, ,) = ProductController(Model(modelAddress).productControllerAddress()).getItemByGlobal(igi);
-    uint dealIndex = OrderModel(Model(modelAddress).orderModelAddress()).createDeal();
     
-    OrderModel(Model(modelAddress).orderModelAddress()).setDealRole(dealIndex, 0, tx.origin);
-    OrderModel(Model(modelAddress).orderModelAddress()).setDealRole(dealIndex, 1, seller);
-    OrderModel(Model(modelAddress).orderModelAddress()).setDealRole(dealIndex, 2, referee);
-    OrderModel(Model(modelAddress).orderModelAddress()).setDealRole(dealIndex, 3, moderator);
-
-    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 0, block.number);
-    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 3, ProductController(Model(modelAddress).productControllerAddress()).getNoDisputePeriodOfItem(igi));
-    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 4, ProductController(Model(modelAddress).productControllerAddress()).getNoDisputePeriodOfItem(igi));
-    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 5, igi);
-    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 6, quantity);
-    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 7, totalUSDInWei);
-    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 8, MarketplaceController(Model(modelAddress).marketplaceControllerAddress()).calculateMarketCommission(totalUSDInWei));
-    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 9, ProductController(Model(modelAddress).productControllerAddress()).getShippingPeriodOfItem(igi));
-    OrderModel(Model(modelAddress).orderModelAddress()).setDealNumericalData(dealIndex, 10, MarketplaceController(Model(modelAddress).marketplaceControllerAddress()).calculateModeratorHandlingFeeRate(totalUSDInWei));
-
-    OrderModel(Model(modelAddress).orderModelAddress()).setDealFlag(dealIndex, 0, true);
-
-    OrderModel(Model(modelAddress).orderModelAddress()).addDealIndex(tx.origin, dealIndex);
-    OrderModel(Model(modelAddress).orderModelAddress()).addDealIndex(seller, dealIndex);
-
-    ProductController(Model(modelAddress).productControllerAddress()).minusProductQuantity(igi, quantity);
-
-    EventModel(Model(modelAddress).eventModelAddress()).onDealCreatedEmit(dealIndex, seller, tx.origin, buyerNote);
-    */
     SharedStructs.Deal memory deal;
     deal.roles[0] = tx.origin;
     deal.roles[1] = seller;
@@ -185,6 +157,7 @@ contract OrderSettlementController {
     deal.numericalData[9] = ProductController(Model(modelAddress).productControllerAddress()).getShippingPeriodOfItem(igi);
     deal.numericalData[10] = MarketplaceController(Model(modelAddress).marketplaceControllerAddress()).calculateModeratorHandlingFeeRate(totalUSDInWei);    
     deal.flags[0] = true;
+    deal.buyerNote = buyerNote;
     uint dealIndex = OrderModel(Model(modelAddress).orderModelAddress()).addDeal(deal);
 
     OrderModel(Model(modelAddress).orderModelAddress()).addDealIndex(tx.origin, dealIndex);

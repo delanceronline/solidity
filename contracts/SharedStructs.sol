@@ -39,7 +39,41 @@ library SharedStructs {
     //9: isRatedAndReviewedBySeller
     //10: isDirectDeal
     bool[11] flags;
-    
+
+    // note from buyer
+    string buyerNote;
+
+    // delivery note from seller
+    string shippingNote;    
+  }
+
+  // deal dispute structure
+  struct DealDispute
+  {
+    uint dealIndex;
+    bool isResolved;
+    bool shouldRefund;
+    uint disputeHandlingFee;
+    string disputeNote;
+  }
+
+  // deal rating structure
+  struct DealVote
+  {
+    address voter;
+    uint  itemGlobalIndex;
+    uint  dealGlobalIndex;
+    uint8 rating;
+    bytes review;
+  }
+
+  // rating to a moderator for a dispute
+  struct ModerationVote
+  {
+    address voter;
+    uint  dealGlobalIndex;
+    uint8 rating;
+    bytes review;
   }
 
   // item's structure

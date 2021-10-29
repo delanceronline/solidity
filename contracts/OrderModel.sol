@@ -38,8 +38,6 @@ contract OrderModel {
 
   }
 
-  
-
   // store all deals
   SharedStructs.Deal[] internal deals;
   
@@ -48,6 +46,9 @@ contract OrderModel {
 
   // direct deal rating flag
   bool public isDirectDealRatingAllowed;
+
+  mapping (address => SharedStructs.DealVote[]) public dealVotes;
+  mapping (address => SharedStructs.ModerationVote[]) public moderationVotes;
 
   constructor(address addr)
   {
@@ -66,6 +67,118 @@ contract OrderModel {
   function getDeals(address owner) external view orderControllerOnly returns (uint[] memory)
   {
     return dealOwners[owner];
+  }
+
+  function addDealVote(address target, address voter, uint itemGlobalIndex, uint dealGlobalIndex, uint8 rating, bytes calldata review) external orderControllerOnly
+  {
+    require(target != address(0));
+    require(voter != address(0));
+
+    SharedStructs.DealVote memory vote;
+    vote.voter = voter;
+    vote.itemGlobalIndex = itemGlobalIndex;
+    vote.dealGlobalIndex = dealGlobalIndex;
+    vote.rating = rating;
+    vote.review = review;
+
+    dealVotes[target].push(vote);
+  }
+
+  function editDealVote(address target, address voter, uint itemGlobalIndex, uint dealGlobalIndex, uint8 rating, bytes calldata review) external orderControllerOnly
+  {
+    require(target != address(0));
+    require(voter != address(0));
+
+    SharedStructs.DealVote[] storage votes = dealVotes[target];
+
+    for(uint i = 0; i < votes.length; i++)
+    {
+      if(votes[i].itemGlobalIndex == itemGlobalIndex && votes[i].dealGlobalIndex == dealGlobalIndex)
+      {
+        votes[i].voter = voter;
+        votes[i].itemGlobalIndex = itemGlobalIndex;
+        votes[i].dealGlobalIndex = dealGlobalIndex;
+        votes[i].rating = rating;
+        votes[i].review = review;
+        
+        break; 
+      }
+    }
+  }
+
+  function getDealVotes(address target) external view orderControllerOnly returns (SharedStructs.DealVote[] memory)
+  {
+    require(target != address(0));
+
+    return dealVotes[target];
+  }
+
+  function addModerationVote(address target, address voter, uint dealGlobalIndex, uint8 rating, bytes calldata review) external orderControllerOnly
+  {
+    require(target != address(0));
+    require(voter != address(0));
+
+    SharedStructs.ModerationVote memory vote;
+    vote.voter = voter;
+    vote.dealGlobalIndex = dealGlobalIndex;
+    vote.rating = rating;
+    vote.review = review;
+
+    moderationVotes[target].push(vote);
+  }
+
+  function editModerationVote(address target, address voter, uint dealGlobalIndex, uint8 rating, bytes calldata review) external orderControllerOnly
+  {
+    require(target != address(0));
+    require(voter != address(0));
+
+    SharedStructs.ModerationVote[] storage votes = moderationVotes[target];
+
+    for(uint i = 0; i < votes.length; i++)
+    {
+      if(votes[i].dealGlobalIndex == dealGlobalIndex)
+      {
+        votes[i].voter = voter;
+        votes[i].dealGlobalIndex = dealGlobalIndex;
+        votes[i].rating = rating;
+        votes[i].review = review;
+        
+        break; 
+      }
+    }
+  }
+
+  function getModerationVotes(address target) external view orderControllerOnly returns (SharedStructs.ModerationVote[] memory)
+  {
+    require(target != address(0));
+
+    return moderationVotes[target];
+  }
+
+
+
+  // set buyer note of a deal
+  function setDealBuyerNote(uint dealGlobalIndex, string calldata note) external orderControllerOnly
+  {
+    deals[dealGlobalIndex].buyerNote = note;
+  }
+
+  // get buyer note of a deal
+  function getDealBuyerNote(uint dealGlobalIndex) external view orderControllerOnly returns (string memory)
+  {
+    return deals[dealGlobalIndex].buyerNote;
+  }
+
+  // set shipping note of a deal
+  function setDealShippingNote(uint dealGlobalIndex, string calldata note) external orderControllerOnly
+  {
+    deals[dealGlobalIndex].shippingNote = note;
+  }
+
+  // get shipping note of a deal
+  function getDealShippingNote(uint dealGlobalIndex) external view orderControllerOnly returns (string memory)
+  {
+    return deals[dealGlobalIndex].shippingNote;
   }
 
   // get the number of deals made globally

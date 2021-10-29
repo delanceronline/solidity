@@ -79,6 +79,7 @@ contract OrderManagementController {
 
     orderModel.setDealFlag(dealIndex, 1, true);
     orderModel.setDealNumericalData(dealIndex, 1, block.number);
+    orderModel.setDealShippingNote(dealIndex, shippingNote);
 
     EventModel(Model(modelAddress).eventModelAddress()).onDealSetShippingNoteEmit(dealIndex, shippingNote);
 
@@ -234,7 +235,8 @@ contract OrderManagementController {
       require(!orderModel.getDealFlag(dealIndex, 8));
 
       orderModel.setDealFlag(dealIndex, 8, true);
-
+      orderModel.addDealVote(orderModel.getDealRole(dealIndex, 1), orderModel.getDealRole(dealIndex, 0), orderModel.getDealNumericalData(dealIndex, 5), dealIndex, rating, review);
+      
       EventModel(Model(modelAddress).eventModelAddress()).onDealRatedByBuyerEmit(orderModel.getDealRole(dealIndex, 1), orderModel.getDealNumericalData(dealIndex, 5), dealIndex, orderModel.getDealRole(dealIndex, 0), rating, review);
 
       ProductController(Model(modelAddress).productControllerAddress()).addItemRatingScore(orderModel.getDealNumericalData(dealIndex, 5), rating);
