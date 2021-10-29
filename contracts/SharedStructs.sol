@@ -50,11 +50,10 @@ library SharedStructs {
   // deal dispute structure
   struct DealDispute
   {
-    uint dealIndex;
     bool isResolved;
     bool shouldRefund;
-    uint disputeHandlingFee;
-    string disputeNote;
+    uint handlingFee;
+    string note;
   }
 
   // deal rating structure

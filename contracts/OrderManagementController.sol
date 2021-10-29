@@ -59,6 +59,7 @@ contract OrderManagementController {
       OrderEscrow(Model(modelAddress).orderEscrowAddress()).transferStabeCoin(msg.sender, handlingFee);
     }
 
+    orderModel.setDealDisputeResolved(globalDealIndex, shouldRefund, handlingFee);
     EventModel(Model(modelAddress).eventModelAddress()).onDisputeResolvedEmit(globalDealIndex, shouldRefund, handlingFee);
   }
 
@@ -138,6 +139,7 @@ contract OrderManagementController {
       orderModel.setDealFlag(dealIndex, 6, true);
       orderModel.setDealFlag(dealIndex, 7, true);
 
+      orderModel.setDealDisputeResolved(dealIndex, true, 0);
       EventModel(Model(modelAddress).eventModelAddress()).onDisputeResolvedEmit(dealIndex, true, 0);
     }
     else
@@ -166,6 +168,7 @@ contract OrderManagementController {
     require(block.number.sub(orderModel.getDealNumericalData(dealIndex, 1)) <= orderModel.getDealNumericalData(dealIndex, 4) && (orderModel.getDealFlag(dealIndex, 4) && orderModel.getDealFlag(dealIndex, 1) && !orderModel.getDealFlag(dealIndex, 2) && !orderModel.getDealFlag(dealIndex, 5)) && msg.sender == orderModel.getDealRole(dealIndex, 0));
 
     orderModel.setDealFlag(dealIndex, 5, true);
+    orderModel.addDealDispute(dealIndex, details);
     EventModel(Model(modelAddress).eventModelAddress()).onDisputeDealEmit(dealIndex, details);
   }
 
@@ -236,7 +239,7 @@ contract OrderManagementController {
 
       orderModel.setDealFlag(dealIndex, 8, true);
       orderModel.addDealVote(orderModel.getDealRole(dealIndex, 1), orderModel.getDealRole(dealIndex, 0), orderModel.getDealNumericalData(dealIndex, 5), dealIndex, rating, review);
-      
+
       EventModel(Model(modelAddress).eventModelAddress()).onDealRatedByBuyerEmit(orderModel.getDealRole(dealIndex, 1), orderModel.getDealNumericalData(dealIndex, 5), dealIndex, orderModel.getDealRole(dealIndex, 0), rating, review);
 
       ProductController(Model(modelAddress).productControllerAddress()).addItemRatingScore(orderModel.getDealNumericalData(dealIndex, 5), rating);
