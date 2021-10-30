@@ -275,7 +275,7 @@ contract ProductController {
     require(model.getItemCount(msg.sender) > 0, "You can only edit your own item.");
 
     uint igi = model.getItemGlobalIndex(msg.sender, localItemIndex);
-    require(igi > 0);
+    require(igi > 0, 'invalid item index provided');
 
     if(model.getItemCategory(igi.sub(1)) > 0)
     {
@@ -283,6 +283,18 @@ contract ProductController {
 
       EventModel(Model(modelAddress).eventModelAddress()).onAddItemDetailsEmit(igi, localItemIndex, details);
     }
+  }
+
+  function getItemDetails(uint localItemIndex) external view returns (bytes memory)
+  { 
+    ProductModel model = ProductModel(Model(modelAddress).productModelAddress());
+
+    require(model.getItemCount(msg.sender) > 0, "You can only edit your own item.");
+
+    uint igi = model.getItemGlobalIndex(msg.sender, localItemIndex);
+    require(igi > 0, 'invalid item index provided');
+
+    return model.getItemDetail(igi);
   }
 
   // set the category index of an item

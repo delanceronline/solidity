@@ -157,6 +157,11 @@ contract ProductModel {
     itemDetails[igi] = detail;
   }
 
+  function getItemDetail(uint igi) external view productControllerOnly returns (bytes memory)
+  {
+    return itemDetails[igi];
+  }
+
   // get the category index of am item
   function getItemCategory(uint globalItemIndex) external view returns (uint8)
   {
