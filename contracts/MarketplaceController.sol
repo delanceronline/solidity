@@ -155,6 +155,11 @@ contract MarketplaceController {
     EventModel(Model(modelAddress).eventModelAddress()).onModifyAnnouncementEmit(id, title, message, isEnabled);
   }
 
+  function getMarketAnnouncements() external view returns (SharedStructs.Announcement[] memory)
+  {
+    return Model(modelAddress).getMarketAnnouncements();
+  }
+
   // set an item as a featured one
   function setFeaturedItem(uint igi, bool isEnabled) adminOnly external
   {
@@ -278,12 +283,6 @@ contract MarketplaceController {
   {
     return Model(modelAddress).marketPGPPublicKey();
   }
-
-  function getMarketAnnouncements() external view returns (SharedStructs.Announcement[] memory)
-  {
-    return Model(modelAddress).getMarketAnnouncements();
-  }
-
 
 
   // add a bound for a turnover tier of marketplace's commission

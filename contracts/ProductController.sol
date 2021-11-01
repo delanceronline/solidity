@@ -82,6 +82,25 @@ contract ProductController {
     EventModel(Model(modelAddress).eventModelAddress()).onAddDiscountToClientEmit(msg.sender, client, igi, discountRate, details);
   }
 
+  function getProductDiscountsToClients(uint igi) external view returns (SharedStructs.ItemDiscount[] memory)
+  {
+    return ProductModel(Model(modelAddress).productModelAddress()).getItemDiscounts(igi);
+  }
+
+  function getClientDiscount(address client, uint igi) external view returns (SharedStructs.ItemDiscount memory)
+  {
+    SharedStructs.ItemDiscount[] memory discounts = ProductModel(Model(modelAddress).productModelAddress()).getItemDiscounts(igi);
+    for(uint i = 0; i < discounts.length; i++)
+    {
+      if(discounts[i].client == client)
+      {
+        return discounts[i];
+      }
+    }
+
+    return SharedStructs.ItemDiscount(address(0), 0, '');
+  }
+
   // add a batch purchase offer to an item
   function addBatchOffer(uint localItemIndex, bytes calldata details) external
   {
