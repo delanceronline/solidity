@@ -53,6 +53,16 @@ contract OrderDetailsController {
     OrderModel(Model(modelAddress).orderModelAddress()).setDirectDealRatingAllowed(isAllowed);
   }
 
+  // ---------------------------------------
+  // ---------------------------------------
+
+  function getDealVotes(address target) external view returns (SharedStructs.DealVote[] memory)
+  {
+    require(target != address(0));
+
+    return OrderModel(Model(modelAddress).orderModelAddress()).getDealVotes(target);
+  }
+
   // get number of deals of a user (the caller)
   function numOfDeals() external view returns (uint)
   {
