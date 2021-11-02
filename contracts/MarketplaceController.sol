@@ -160,6 +160,11 @@ contract MarketplaceController {
     return Model(modelAddress).getMarketAnnouncements();
   }
 
+  function getMarketAnnouncement(uint index) external view returns (SharedStructs.Announcement memory)
+  {
+    return Model(modelAddress).getMarketAnnouncements()[index];
+  }
+
   // set an item as a featured one
   function setFeaturedItem(uint igi, bool isEnabled) adminOnly external
   {
