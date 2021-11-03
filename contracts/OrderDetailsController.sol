@@ -56,14 +56,16 @@ contract OrderDetailsController {
   // ---------------------------------------
   // ---------------------------------------
 
-  function getDealVotes(address target) external view returns (SharedStructs.DealVote[] memory)
+  // get a list of votes to a seller
+  function getDealVotes(address target) public view returns (SharedStructs.DealVote[] memory)
   {
     require(target != address(0));
 
     return OrderModel(Model(modelAddress).orderModelAddress()).getDealVotes(target);
   }
 
-  function getNumOfDealVotes(address target, uint igi) external view returns (uint)
+  // get the number of votes to a seller of an item
+  function getNumOfDealVotesOfItem(address target, uint igi) public view returns (uint)
   {
     require(target != address(0));
 
@@ -77,6 +79,27 @@ contract OrderDetailsController {
     }
 
     return count;
+  }
+
+  // get a list of votes to a seller of an item
+  function getDealVotesOfItem(address target, uint igi) external view returns (SharedStructs.DealVote[] memory)
+  {
+    OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
+
+    SharedStructs.DealVote[] memory votes = new SharedStructs.DealVote[](getNumOfDealVotesOfItem(target, igi));
+    SharedStructs.DealVote[] memory allSellerVotes = orderModel.getDealVotes(target);
+
+    uint count = 0;
+    for(uint i = 0; i < allSellerVotes.length; i++)
+    {
+      if(allSellerVotes[i].itemGlobalIndex == igi)
+      {
+        votes[count] = allSellerVotes[i];
+        count++;
+      }
+    }
+
+    return votes;
   }
 
   // get number of created deals of a user
