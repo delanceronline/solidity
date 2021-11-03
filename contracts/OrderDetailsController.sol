@@ -63,6 +63,22 @@ contract OrderDetailsController {
     return OrderModel(Model(modelAddress).orderModelAddress()).getDealVotes(target);
   }
 
+  function getNumOfDealVotes(address target, uint igi) external view returns (uint)
+  {
+    require(target != address(0));
+
+    uint count = 0;
+
+    SharedStructs.DealVote[] memory votes = OrderModel(Model(modelAddress).orderModelAddress()).getDealVotes(target);
+    for(uint i = 0; i < votes.length; i++)
+    {
+      if(votes[i].itemGlobalIndex == igi)
+        count++;
+    }
+
+    return count;
+  }
+
   // get number of deals of a user (the caller)
   function numOfDeals() external view returns (uint)
   {
