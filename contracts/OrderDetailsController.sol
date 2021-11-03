@@ -79,10 +79,53 @@ contract OrderDetailsController {
     return count;
   }
 
-  // get number of deals of a user (the caller)
-  function numOfDeals() external view returns (uint)
+  // get number of created deals of a user
+  function numOfCreatedDeals(address owner) external view returns (uint)
   {
-    return OrderModel(Model(modelAddress).orderModelAddress()).getDealCount(msg.sender);
+    require(owner != address(0));
+
+    return OrderModel(Model(modelAddress).orderModelAddress()).getDealCount(owner);
+  }
+
+  // get number of finalized deals of a seller
+  function getNumOfFinalizedDeals(address seller) public view returns (uint)
+  {
+    OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
+
+    SharedStructs.Deal[] memory allDeals = orderModel.getAllDeals();
+    uint[] memory dealIndices = orderModel.getDeals(seller);
+
+    uint count = 0;
+
+    for(uint i = 0; i < dealIndices.length; i++)
+    {
+      if(allDeals[dealIndices[i]].flags[2] == true)
+        count++;
+    }
+
+    return count;
+  }
+
+  function getFinalizedDeals(address seller) external view returns (SharedStructs.Deal[] memory)
+  {
+    OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
+
+    SharedStructs.Deal[] memory deals = new SharedStructs.Deal[](getNumOfFinalizedDeals(seller));
+
+    uint[] memory dealIndices = orderModel.getDeals(seller);
+    SharedStructs.Deal[] memory allDeals = orderModel.getAllDeals();
+
+    uint count = 0;
+    for(uint i = 0; i < dealIndices.length; i++)
+    {
+      if(allDeals[dealIndices[i]].flags[2] == true)
+      {
+        deals[count] = allDeals[dealIndices[i]];
+        count++;
+      }
+    }
+
+    return deals;
   }
 
   // get basic details of a deal
