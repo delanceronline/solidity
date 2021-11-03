@@ -106,6 +106,25 @@ contract OrderDetailsController {
     return count;
   }
 
+  function getNumOfFinalizedDealsOfItem(address seller, uint igi) public view returns (uint)
+  {
+    OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
+
+    SharedStructs.Deal[] memory allDeals = orderModel.getAllDeals();
+    uint[] memory dealIndices = orderModel.getDeals(seller);
+
+    uint count = 0;
+
+    for(uint i = 0; i < dealIndices.length; i++)
+    {
+      if(allDeals[dealIndices[i]].flags[2] == true && allDeals[dealIndices[i]].numericalData[5] == igi)
+        count++;
+    }
+
+    return count;
+  }
+
+  // get a list of finalized deals of a seller
   function getFinalizedDeals(address seller) external view returns (SharedStructs.Deal[] memory)
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
@@ -119,6 +138,29 @@ contract OrderDetailsController {
     for(uint i = 0; i < dealIndices.length; i++)
     {
       if(allDeals[dealIndices[i]].flags[2] == true)
+      {
+        deals[count] = allDeals[dealIndices[i]];
+        count++;
+      }
+    }
+
+    return deals;
+  }
+
+  // get a list of finalized deals of an item of a seller 
+  function getFinalizedDealOfItem(address seller, uint igi) external view returns (SharedStructs.Deal[] memory)
+  {
+    OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
+
+    SharedStructs.Deal[] memory deals = new SharedStructs.Deal[](getNumOfFinalizedDealsOfItem(seller, igi));
+
+    uint[] memory dealIndices = orderModel.getDeals(seller);
+    SharedStructs.Deal[] memory allDeals = orderModel.getAllDeals();
+
+    uint count = 0;
+    for(uint i = 0; i < dealIndices.length; i++)
+    {
+      if(allDeals[dealIndices[i]].flags[2] == true && allDeals[dealIndices[i]].numericalData[5] == igi)
       {
         deals[count] = allDeals[dealIndices[i]];
         count++;
