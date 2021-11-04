@@ -102,6 +102,20 @@ contract OrderDetailsController {
     return votes;
   }
 
+  // returns if a deal has been voted
+  function isDealVoted(address target, uint dealGlobalIndex) external view returns (bool)
+  {
+    SharedStructs.DealVote[] memory votes = OrderModel(Model(modelAddress).orderModelAddress()).getDealVotes(target);
+
+    for(uint i = 0; i < votes.length; i++)
+    {
+      if(votes[i].dealGlobalIndex == dealGlobalIndex)
+        return true;
+    }
+
+    return false;
+  }
+
   // get number of created deals of a user
   function numOfCreatedDeals(address owner) external view returns (uint)
   {
