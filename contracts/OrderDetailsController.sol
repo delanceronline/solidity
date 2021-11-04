@@ -232,6 +232,18 @@ contract OrderDetailsController {
     return allDeals[dealIndex].buyerNote;
   }
 
+  function getDealDispute(uint localIndex) external view returns (SharedStructs.DealDispute memory)
+  {
+    OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
+
+    // localIndex < dealOwners[msg.sender].length --- deal count is out of bound.
+    require(localIndex < orderModel.getDealCount(msg.sender));
+
+    uint dealIndex = orderModel.getDealIndex(msg.sender, localIndex);
+
+    return orderModel.getDealDispute(dealIndex);
+  }
+
   // get basic details of a deal
   function getDealBasicDetails(uint localIndex) external view returns (uint, uint, uint, uint, uint, uint)
   {
