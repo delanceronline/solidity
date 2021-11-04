@@ -206,6 +206,32 @@ contract OrderDetailsController {
     return allDeals[dealIndex];
   }
 
+  function getDealShippingNote(uint localIndex) external view returns (string memory)
+  {
+    OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
+
+    // localIndex < dealOwners[msg.sender].length --- deal count is out of bound.
+    require(localIndex < orderModel.getDealCount(msg.sender));
+
+    uint dealIndex = orderModel.getDealIndex(msg.sender, localIndex);
+    SharedStructs.Deal[] memory allDeals = orderModel.getAllDeals();
+
+    return allDeals[dealIndex].shippingNote;
+  }
+
+  function getDealBuyerNote(uint localIndex) external view returns (string memory)
+  {
+    OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
+
+    // localIndex < dealOwners[msg.sender].length --- deal count is out of bound.
+    require(localIndex < orderModel.getDealCount(msg.sender));
+
+    uint dealIndex = orderModel.getDealIndex(msg.sender, localIndex);
+    SharedStructs.Deal[] memory allDeals = orderModel.getAllDeals();
+
+    return allDeals[dealIndex].buyerNote;
+  }
+
   // get basic details of a deal
   function getDealBasicDetails(uint localIndex) external view returns (uint, uint, uint, uint, uint, uint)
   {
