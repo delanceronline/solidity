@@ -53,6 +53,9 @@ contract ProductModel {
   // item discounts for users
   mapping (uint => SharedStructs.ItemDiscount[]) public itemDiscounts;
 
+  // global discounts for users
+  mapping (address => SharedStructs.ItemDiscount) public globalDiscounts;
+
   // batch purchase offers for items
   mapping (uint => bytes) public batchOffers;
 
@@ -90,6 +93,34 @@ contract ProductModel {
         break;
       }
     }
+  }
+
+  function addGlobalDiscount(address client, uint8 discountRate, bytes calldata additional) external productControllerOnly
+  {
+    require(client != address(0));
+
+    SharedStructs.ItemDiscount memory discount;
+    discount.client = client;
+    discount.discountRate = discountRate;
+    discount.additional = additional;
+
+    globalDiscounts[client] = discount;
+  }
+
+  function getGlobalDiscount(address client) external view productControllerOnly returns (SharedStructs.ItemDiscount memory)
+  {
+    require(client != address(0));
+
+    return globalDiscounts[client];
+  }
+
+  function editGlobalDiscount(address client, uint8 discountRate, bytes calldata additional) external productControllerOnly
+  {
+    require(client != address(0));
+
+    SharedStructs.ItemDiscount storage discount = globalDiscounts[client];
+    discount.discountRate = discountRate;
+    discount.additional = additional;
   }
 
   function addItemDiscount(uint igi, address client, uint8 discountRate, bytes calldata additional) external productControllerOnly
