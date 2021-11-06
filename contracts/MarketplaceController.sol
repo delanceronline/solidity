@@ -165,10 +165,78 @@ contract MarketplaceController {
     return Model(modelAddress).getMarketAnnouncements()[index];
   }
 
+  function getFeaturedItemIndices() external view returns (uint[] memory)
+  {
+    return Model(modelAddress).getFeaturedItemIndices();
+  }
+
+  function doesFeaturedItemIndexExist(uint igi) public view returns (bool)
+  {
+    uint[] memory indices = Model(modelAddress).getFeaturedItemIndices();
+    for(uint i = 0; i < indices.length; i++)
+    {
+      if(indices[i] == igi)
+        return true;        
+    }
+
+    return false;
+  }
+
+  function getFeaturedVendors() external view returns (address[] memory)
+  {
+    return Model(modelAddress).getFeaturedVendors();
+  }
+
+  function doesFeaturedVendorExist(address vendor) public view returns (bool)
+  {
+    address[] memory vendors = Model(modelAddress).getFeaturedVendors();
+    for(uint i = 0; i < vendors.length; i++)
+    {
+      if(vendors[i] == vendor)
+        return true;        
+    }
+
+    return false;
+  }
+
+  function getFavourUsers(address owner) external view returns (address[] memory)
+  {
+    return Model(modelAddress).getFavourUsers(owner);
+  }
+
+  function getMarketPGPPublicKey() external view returns (string memory)
+  {
+    return Model(modelAddress).marketPGPPublicKey();
+  }
+
+  function addCustomizedController(address controller) external adminOnly
+  {
+    Model(modelAddress).addCustomizedController(controller);
+  }
+
+  function removeCustomizedController(address controller) external adminOnly
+  {
+    Model(modelAddress).removeCustomizedController(controller);
+  }
+
+  function addCustomizedModel(address model) external adminOnly
+  {
+    Model(modelAddress).addCustomizedModel(model);
+  }
+
+  function removeCustomizedModel(address model) external adminOnly
+  {
+    Model(modelAddress).removeCustomizedModel(model);
+  }
+
   // set an item as a featured one
   function setFeaturedItem(uint igi, bool isEnabled) adminOnly external
   {
-    Model(modelAddress).addFeaturedItem(igi);
+    if(isEnabled && !doesFeaturedItemIndexExist(igi))
+      Model(modelAddress).addFeaturedItem(igi);
+    else
+      Model(modelAddress).removeFeaturedItem(igi);
+
     EventModel(Model(modelAddress).eventModelAddress()).onSetFeaturedItemEmit(igi, isEnabled);
   }
 
@@ -176,7 +244,12 @@ contract MarketplaceController {
   function setFeaturedVendor(address vendor, bool isEnabled) adminOnly external
   {
     require(vendor != address(0));
-    Model(modelAddress).addFeaturedVendor(vendor);
+
+    if(isEnabled && !doesFeaturedVendorExist(vendor))
+      Model(modelAddress).addFeaturedVendor(vendor);
+    else
+      Model(modelAddress).removeFeaturedVendor(vendor);
+
     EventModel(Model(modelAddress).eventModelAddress()).onSetFeaturedVendorEmit(vendor, isEnabled);
   }
 
@@ -268,46 +341,6 @@ contract MarketplaceController {
   // ------------------------------------------------------------------------------------
   // Marketplace setting
   // ------------------------------------------------------------------------------------
-
-  function getFeaturedItemIndices() external view returns (uint[] memory)
-  {
-    return Model(modelAddress).getFeaturedItemIndices();
-  }
-
-  function getFeaturedVendors() external view returns (address[] memory)
-  {
-    return Model(modelAddress).getFeaturedVendors();
-  }
-
-  function getFavourUsers(address owner) external view returns (address[] memory)
-  {
-    return Model(modelAddress).getFavourUsers(owner);
-  }
-
-  function getMarketPGPPublicKey() external view returns (string memory)
-  {
-    return Model(modelAddress).marketPGPPublicKey();
-  }
-
-  function addCustomizedController(address controller) external adminOnly
-  {
-    Model(modelAddress).addCustomizedController(controller);
-  }
-
-  function removeCustomizedController(address controller) external adminOnly
-  {
-    Model(modelAddress).removeCustomizedController(controller);
-  }
-
-  function addCustomizedModel(address model) external adminOnly
-  {
-    Model(modelAddress).addCustomizedModel(model);
-  }
-
-  function removeCustomizedModel(address model) external adminOnly
-  {
-    Model(modelAddress).removeCustomizedModel(model);
-  }
 
   // add a bound for a turnover tier of marketplace's commission
   function addMarketplaceCommissionBound(uint value) external adminOnly
