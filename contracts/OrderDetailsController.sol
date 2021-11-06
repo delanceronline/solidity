@@ -207,55 +207,33 @@ contract OrderDetailsController {
     return deals;
   }
 
-  function getDeal(uint localIndex) external view returns (SharedStructs.Deal memory)
+  function getDeal(uint dealGlobalIndex) external view returns (SharedStructs.Deal memory)
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
-    // localIndex < dealOwners[msg.sender].length --- deal count is out of bound.
-    require(localIndex < orderModel.getDealCount(msg.sender));
-
-    uint dealIndex = orderModel.getDealIndex(msg.sender, localIndex);
     SharedStructs.Deal[] memory allDeals = orderModel.getAllDeals();
-
-    return allDeals[dealIndex];
+    return allDeals[dealGlobalIndex];
   }
 
-  function getDealShippingNote(uint localIndex) external view returns (string memory)
+  function getDealShippingNote(uint dealGlobalIndex) external view returns (string memory)
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
-    // localIndex < dealOwners[msg.sender].length --- deal count is out of bound.
-    require(localIndex < orderModel.getDealCount(msg.sender));
-
-    uint dealIndex = orderModel.getDealIndex(msg.sender, localIndex);
     SharedStructs.Deal[] memory allDeals = orderModel.getAllDeals();
-
-    return allDeals[dealIndex].shippingNote;
+    return allDeals[dealGlobalIndex].shippingNote;
   }
 
-  function getDealBuyerNote(uint localIndex) external view returns (string memory)
+  function getDealBuyerNote(uint dealGlobalIndex) external view returns (string memory)
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
-    // localIndex < dealOwners[msg.sender].length --- deal count is out of bound.
-    require(localIndex < orderModel.getDealCount(msg.sender));
-
-    uint dealIndex = orderModel.getDealIndex(msg.sender, localIndex);
     SharedStructs.Deal[] memory allDeals = orderModel.getAllDeals();
-
-    return allDeals[dealIndex].buyerNote;
+    return allDeals[dealGlobalIndex].buyerNote;
   }
 
-  function getDealDispute(uint localIndex) external view returns (SharedStructs.DealDispute memory)
+  function getDealDispute(uint dealGlobalIndex) external view returns (SharedStructs.DealDispute memory)
   {
-    OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
-
-    // localIndex < dealOwners[msg.sender].length --- deal count is out of bound.
-    require(localIndex < orderModel.getDealCount(msg.sender));
-
-    uint dealIndex = orderModel.getDealIndex(msg.sender, localIndex);
-
-    return orderModel.getDealDispute(dealIndex);
+    return OrderModel(Model(modelAddress).orderModelAddress()).getDealDispute(dealGlobalIndex);
   }
 
   function getDisputedDealGlobalIndices() external view returns (uint[] memory)
