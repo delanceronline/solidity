@@ -20,10 +20,10 @@ contract ProductModel {
 
   address public modelAddress;
 
-  // product controller only modifier
-  modifier productControllerOnly()
+  // controller only modifier
+  modifier controllerOnly()
   {
-    require(msg.sender == Model(modelAddress).productControllerAddress(), "Product controller access only in product model");
+    require(Model(modelAddress).isController(msg.sender), "Controller access only in main model");
     _;
   }
 
@@ -71,7 +71,7 @@ contract ProductModel {
   // Data access
   // ------------------------------------------------------------------------------------  
 
-  function addHashTag(bytes32 lowerCaseHash, uint igi, bytes calldata tag, bool isEnabled) external productControllerOnly
+  function addHashTag(bytes32 lowerCaseHash, uint igi, bytes calldata tag, bool isEnabled) external controllerOnly
   {
     SharedStructs.HashTag memory hashTag;
     hashTag.igi = igi;
@@ -81,7 +81,7 @@ contract ProductModel {
     hashTags[lowerCaseHash].push(hashTag);
   }
 
-  function enableTag(bytes32 lowerCaseHash, uint igi, bool isEnabled) external productControllerOnly
+  function enableTag(bytes32 lowerCaseHash, uint igi, bool isEnabled) external controllerOnly
   {
     SharedStructs.HashTag[] storage tags = hashTags[lowerCaseHash];
 
@@ -95,7 +95,7 @@ contract ProductModel {
     }
   }
 
-  function addGlobalDiscount(address client, uint8 discountRate, bytes calldata additional) external productControllerOnly
+  function addGlobalDiscount(address client, uint8 discountRate, bytes calldata additional) external controllerOnly
   {
     require(client != address(0));
 
@@ -107,14 +107,14 @@ contract ProductModel {
     globalDiscounts[client] = discount;
   }
 
-  function getGlobalDiscount(address client) external view productControllerOnly returns (SharedStructs.ItemDiscount memory)
+  function getGlobalDiscount(address client) external view controllerOnly returns (SharedStructs.ItemDiscount memory)
   {
     require(client != address(0));
 
     return globalDiscounts[client];
   }
 
-  function editGlobalDiscount(address client, uint8 discountRate, bytes calldata additional) external productControllerOnly
+  function editGlobalDiscount(address client, uint8 discountRate, bytes calldata additional) external controllerOnly
   {
     require(client != address(0));
 
@@ -123,7 +123,7 @@ contract ProductModel {
     discount.additional = additional;
   }
 
-  function addItemDiscount(uint igi, address client, uint8 discountRate, bytes calldata additional) external productControllerOnly
+  function addItemDiscount(uint igi, address client, uint8 discountRate, bytes calldata additional) external controllerOnly
   {
     require(client != address(0));
 
@@ -135,12 +135,12 @@ contract ProductModel {
     itemDiscounts[igi].push(discount);
   }
 
-  function getItemDiscounts(uint igi) external view productControllerOnly returns (SharedStructs.ItemDiscount[] memory)
+  function getItemDiscounts(uint igi) external view controllerOnly returns (SharedStructs.ItemDiscount[] memory)
   {
     return itemDiscounts[igi];
   }
 
-  function editItemDiscount(uint igi, address client, uint8 discountRate, bytes calldata additional) external productControllerOnly
+  function editItemDiscount(uint igi, address client, uint8 discountRate, bytes calldata additional) external controllerOnly
   {
     require(client != address(0));
 
@@ -158,17 +158,17 @@ contract ProductModel {
     }
   }
 
-  function addBatchOffer(uint igi, bytes calldata details) external productControllerOnly
+  function addBatchOffer(uint igi, bytes calldata details) external controllerOnly
   {
     batchOffers[igi] = details;
   }
 
-  function getBatchOffer(uint igi) external view productControllerOnly returns (bytes memory)
+  function getBatchOffer(uint igi) external view controllerOnly returns (bytes memory)
   {
     return batchOffers[igi];
   }
 
-  function setBatchOffer(uint igi, bytes calldata details) external productControllerOnly
+  function setBatchOffer(uint igi, bytes calldata details) external controllerOnly
   {
     batchOffers[igi] = details;
   }
@@ -183,12 +183,12 @@ contract ProductModel {
     return itemOwners[owner];
   }
 
-  function setItemDetail(uint igi, bytes calldata detail) external productControllerOnly
+  function setItemDetail(uint igi, bytes calldata detail) external controllerOnly
   {
     itemDetails[igi] = detail;
   }
 
-  function getItemDetail(uint igi) external view productControllerOnly returns (bytes memory)
+  function getItemDetail(uint igi) external view controllerOnly returns (bytes memory)
   {
     return itemDetails[igi];
   }
@@ -324,7 +324,7 @@ contract ProductModel {
   }
 
   // set the number of blocks after that the item will be available for deal request since its creation block
-  function setValidBlockCount(uint globalItemIndex, uint count) external productControllerOnly
+  function setValidBlockCount(uint globalItemIndex, uint count) external controllerOnly
   {
     require(globalItemIndex < listedItems.length);
 
@@ -332,7 +332,7 @@ contract ProductModel {
   }
 
   // add a new item to the list in product model
-  function addItem(uint8 category, uint priceUSD, bytes calldata title, uint quantityLeft, bool isQuantityLimited, uint noDisputePeriod, uint shippingPeriod, uint validBlockCount) external productControllerOnly
+  function addItem(uint8 category, uint priceUSD, bytes calldata title, uint quantityLeft, bool isQuantityLimited, uint noDisputePeriod, uint shippingPeriod, uint validBlockCount) external controllerOnly
   {
     //listedItems.push(SharedStructs.Item(category, priceUSD, true, title, '', 0, 0, quantityLeft, isQuantityLimited, false, false, noDisputePeriod, shippingPeriod, block.number, validBlockCount));
     
@@ -356,7 +356,7 @@ contract ProductModel {
   }
 
   // set item category index of an item
-  function setItemCategory(uint globalItemIndex, uint8 category) external productControllerOnly
+  function setItemCategory(uint globalItemIndex, uint8 category) external controllerOnly
   {
     require(globalItemIndex < listedItems.length);
 
@@ -364,7 +364,7 @@ contract ProductModel {
   }
 
   // set the listed price of an item in pegged USD
-  function setItemPriceUSD(uint globalItemIndex, uint priceUSD) external productControllerOnly
+  function setItemPriceUSD(uint globalItemIndex, uint priceUSD) external controllerOnly
   {
     require(globalItemIndex < listedItems.length);
 
@@ -372,7 +372,7 @@ contract ProductModel {
   }
 
   // set the active flag of an item
-  function setItemIsActive(uint globalItemIndex, bool isActive) external productControllerOnly
+  function setItemIsActive(uint globalItemIndex, bool isActive) external controllerOnly
   {
     require(globalItemIndex < listedItems.length);
 
@@ -380,7 +380,7 @@ contract ProductModel {
   }
 
   // set the title of an item
-  function setItemTitle(uint globalItemIndex, bytes calldata title) external productControllerOnly
+  function setItemTitle(uint globalItemIndex, bytes calldata title) external controllerOnly
   {
     require(globalItemIndex < listedItems.length);
 
@@ -388,7 +388,7 @@ contract ProductModel {
   }
 
   // set the deal count of an item
-  function setItemDealCount(uint globalItemIndex, uint dealCount) external productControllerOnly
+  function setItemDealCount(uint globalItemIndex, uint dealCount) external controllerOnly
   {
     require(globalItemIndex < listedItems.length);
 
@@ -396,7 +396,7 @@ contract ProductModel {
   }
 
   // set the rating score of an item
-  function setItemRatingScore(uint globalItemIndex, uint ratingScore) external productControllerOnly
+  function setItemRatingScore(uint globalItemIndex, uint ratingScore) external controllerOnly
   {
     require(globalItemIndex < listedItems.length);
 
@@ -404,7 +404,7 @@ contract ProductModel {
   }
 
   // set the quantity left of an item
-  function setItemQuantityLeft(uint globalItemIndex, uint quantityLeft) external productControllerOnly
+  function setItemQuantityLeft(uint globalItemIndex, uint quantityLeft) external controllerOnly
   {
     require(globalItemIndex < listedItems.length);
 
@@ -412,7 +412,7 @@ contract ProductModel {
   }
 
   // set if an item is limited in quantity
-  function setItemIsQuantityLimited(uint globalItemIndex, bool isQuantityLimited) external productControllerOnly
+  function setItemIsQuantityLimited(uint globalItemIndex, bool isQuantityLimited) external controllerOnly
   {
     require(globalItemIndex < listedItems.length);
 
@@ -420,7 +420,7 @@ contract ProductModel {
   }
 
   // set if an item only available for private deal
-  function setItemIsDealPrivate(uint globalItemIndex, bool isDealPrivate) external productControllerOnly
+  function setItemIsDealPrivate(uint globalItemIndex, bool isDealPrivate) external controllerOnly
   {
     require(globalItemIndex < listedItems.length);
 
@@ -428,7 +428,7 @@ contract ProductModel {
   }
 
   // set if an item is banned
-  function setItemIsBanned(uint globalItemIndex, bool isBanned) external productControllerOnly
+  function setItemIsBanned(uint globalItemIndex, bool isBanned) external controllerOnly
   {
     require(globalItemIndex < listedItems.length);
 
@@ -436,7 +436,7 @@ contract ProductModel {
   }
 
   // set the no dispute period of an item in terms of the number of blocks
-  function setItemNoDisputePeriod(uint globalItemIndex, uint noDisputePeriod) external productControllerOnly
+  function setItemNoDisputePeriod(uint globalItemIndex, uint noDisputePeriod) external controllerOnly
   {
     require(globalItemIndex < listedItems.length);
 
@@ -444,7 +444,7 @@ contract ProductModel {
   }
 
   // set the shipping time limit of an item in terms of the number of blocks
-  function setItemShippingPeriod(uint globalItemIndex, uint shippingPeriod) external productControllerOnly
+  function setItemShippingPeriod(uint globalItemIndex, uint shippingPeriod) external controllerOnly
   {
     require(globalItemIndex < listedItems.length);
 
@@ -452,7 +452,7 @@ contract ProductModel {
   }  
 
   // add an allow buyer to an item
-  function setItemAllowedClient(uint globalItemIndex, address clientAddress, bool isAllowed) external productControllerOnly
+  function setItemAllowedClient(uint globalItemIndex, address clientAddress, bool isAllowed) external controllerOnly
   {
     require(globalItemIndex < listedItems.length);
     require(clientAddress != address(0));
@@ -472,7 +472,7 @@ contract ProductModel {
   }
 
   // add the global item index of an item to an item seller / owner
-  function addItemIndex(address seller, uint itemIndex) external productControllerOnly
+  function addItemIndex(address seller, uint itemIndex) external controllerOnly
   {
     require(seller != address(0));
 
@@ -480,7 +480,7 @@ contract ProductModel {
   }
 
   // remove the global item index of an item from an item seller / owner
-  function removeItemIndex(address seller, uint position) external productControllerOnly
+  function removeItemIndex(address seller, uint position) external controllerOnly
   {
     require(seller != address(0));
     require(position < itemOwners[seller].length);
@@ -491,13 +491,13 @@ contract ProductModel {
   }
 
   // add a global item index of an item to a category
-  function addItemIndexToCategory(uint8 category, uint itemIndex) external productControllerOnly
+  function addItemIndexToCategory(uint8 category, uint itemIndex) external controllerOnly
   {
     itemCategories[category].push(itemIndex);
   }
 
   // remove a global item index of an item from a category
-  function removeItemIndexFromCategory(uint8 category, uint position) external productControllerOnly
+  function removeItemIndexFromCategory(uint8 category, uint position) external controllerOnly
   {
     require(position < itemCategories[category].length);
 
@@ -530,7 +530,7 @@ contract ProductModel {
   }
 
   // increase the quantity left of an item
-  function plusProductQuantity(uint igi, uint count) external productControllerOnly
+  function plusProductQuantity(uint igi, uint count) external controllerOnly
   {
     SharedStructs.Item storage item = listedItems[igi];
     require(item.category != 0);
@@ -539,7 +539,7 @@ contract ProductModel {
   }
 
   // decrease the quantity left of an item
-  function minusProductQuantity(uint igi, uint count) external productControllerOnly
+  function minusProductQuantity(uint igi, uint count) external controllerOnly
   {
     SharedStructs.Item storage item = listedItems[igi];
     require(item.category != 0);

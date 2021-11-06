@@ -21,15 +21,14 @@ contract OrderModel {
   using SafeMath for uint256;
 
   address public modelAddress;
-
-  // order controllers only modifier
-  modifier orderControllerOnly() {
-
-    require(msg.sender == Model(modelAddress).orderDetailsControllerAddress() || msg.sender == Model(modelAddress).orderManagementControllerAddress() || msg.sender == Model(modelAddress).orderSettlementControllerAddress(), "Order controller access only in order model");
-    _;
-
-  }
   
+  // controller only modifier
+  modifier controllerOnly()
+  {
+    require(Model(modelAddress).isController(msg.sender), "Controller access only in main model");
+    _;
+  }
+
   // administrator only modifier
   modifier adminOnly() {
 
@@ -61,17 +60,17 @@ contract OrderModel {
   // Data access
   // ------------------------------------------------------------------------------------
 
-  function getAllDeals() external view orderControllerOnly returns (SharedStructs.Deal[] memory)
+  function getAllDeals() external view controllerOnly returns (SharedStructs.Deal[] memory)
   {
     return deals;
   }
 
-  function getDeals(address owner) external view orderControllerOnly returns (uint[] memory)
+  function getDeals(address owner) external view controllerOnly returns (uint[] memory)
   {
     return dealOwners[owner];
   }
 
-  function addDealDispute(uint dealGlobalIndex, string calldata note) external orderControllerOnly
+  function addDealDispute(uint dealGlobalIndex, string calldata note) external controllerOnly
   {
     SharedStructs.DealDispute memory dispute;
     dispute.isResolved = false;
@@ -81,7 +80,7 @@ contract OrderModel {
     dealDisputes[dealGlobalIndex] = dispute;
   }
 
-  function editDealDispute(uint dealGlobalIndex, bool isResolved, bool shouldRefund, uint handlingFee, string calldata note) external orderControllerOnly
+  function editDealDispute(uint dealGlobalIndex, bool isResolved, bool shouldRefund, uint handlingFee, string calldata note) external controllerOnly
   {
     SharedStructs.DealDispute storage dispute = dealDisputes[dealGlobalIndex];
     dispute.isResolved = isResolved;
@@ -90,19 +89,19 @@ contract OrderModel {
     dispute.note = note;
   }
 
-  function setDealDisputeResolved(uint dealGlobalIndex, bool shouldRefund, uint handlingFee) external orderControllerOnly
+  function setDealDisputeResolved(uint dealGlobalIndex, bool shouldRefund, uint handlingFee) external controllerOnly
   {
     SharedStructs.DealDispute storage dispute = dealDisputes[dealGlobalIndex];
     dispute.shouldRefund = shouldRefund;
     dispute.handlingFee = handlingFee;
   }
 
-  function getDealDispute(uint dealGlobalIndex) external view orderControllerOnly returns (SharedStructs.DealDispute memory)
+  function getDealDispute(uint dealGlobalIndex) external view controllerOnly returns (SharedStructs.DealDispute memory)
   {
     return dealDisputes[dealGlobalIndex];
   }
 
-  function addDealVote(address target, address voter, uint itemGlobalIndex, uint dealGlobalIndex, uint8 rating, bytes calldata review) external orderControllerOnly
+  function addDealVote(address target, address voter, uint itemGlobalIndex, uint dealGlobalIndex, uint8 rating, bytes calldata review) external controllerOnly
   {
     require(target != address(0));
     require(voter != address(0));
@@ -117,7 +116,7 @@ contract OrderModel {
     dealVotes[target].push(vote);
   }
 
-  function editDealVote(address target, address voter, uint itemGlobalIndex, uint dealGlobalIndex, uint8 rating, bytes calldata review) external orderControllerOnly
+  function editDealVote(address target, address voter, uint itemGlobalIndex, uint dealGlobalIndex, uint8 rating, bytes calldata review) external controllerOnly
   {
     require(target != address(0));
     require(voter != address(0));
@@ -139,14 +138,14 @@ contract OrderModel {
     }
   }
 
-  function getDealVotes(address target) external view orderControllerOnly returns (SharedStructs.DealVote[] memory)
+  function getDealVotes(address target) external view controllerOnly returns (SharedStructs.DealVote[] memory)
   {
     require(target != address(0));
 
     return dealVotes[target];
   }
 
-  function addModerationVote(address target, address voter, uint dealGlobalIndex, uint8 rating, bytes calldata review) external orderControllerOnly
+  function addModerationVote(address target, address voter, uint dealGlobalIndex, uint8 rating, bytes calldata review) external controllerOnly
   {
     require(target != address(0));
     require(voter != address(0));
@@ -160,7 +159,7 @@ contract OrderModel {
     moderationVotes[target].push(vote);
   }
 
-  function editModerationVote(address target, address voter, uint dealGlobalIndex, uint8 rating, bytes calldata review) external orderControllerOnly
+  function editModerationVote(address target, address voter, uint dealGlobalIndex, uint8 rating, bytes calldata review) external controllerOnly
   {
     require(target != address(0));
     require(voter != address(0));
@@ -181,7 +180,7 @@ contract OrderModel {
     }
   }
 
-  function getModerationVotes(address target) external view orderControllerOnly returns (SharedStructs.ModerationVote[] memory)
+  function getModerationVotes(address target) external view controllerOnly returns (SharedStructs.ModerationVote[] memory)
   {
     require(target != address(0));
 
@@ -191,25 +190,25 @@ contract OrderModel {
 
 
   // set buyer note of a deal
-  function setDealBuyerNote(uint dealGlobalIndex, string calldata note) external orderControllerOnly
+  function setDealBuyerNote(uint dealGlobalIndex, string calldata note) external controllerOnly
   {
     deals[dealGlobalIndex].buyerNote = note;
   }
 
   // get buyer note of a deal
-  function getDealBuyerNote(uint dealGlobalIndex) external view orderControllerOnly returns (string memory)
+  function getDealBuyerNote(uint dealGlobalIndex) external view controllerOnly returns (string memory)
   {
     return deals[dealGlobalIndex].buyerNote;
   }
 
   // set shipping note of a deal
-  function setDealShippingNote(uint dealGlobalIndex, string calldata note) external orderControllerOnly
+  function setDealShippingNote(uint dealGlobalIndex, string calldata note) external controllerOnly
   {
     deals[dealGlobalIndex].shippingNote = note;
   }
 
   // get shipping note of a deal
-  function getDealShippingNote(uint dealGlobalIndex) external view orderControllerOnly returns (string memory)
+  function getDealShippingNote(uint dealGlobalIndex) external view controllerOnly returns (string memory)
   {
     return deals[dealGlobalIndex].shippingNote;
   }
@@ -273,7 +272,7 @@ contract OrderModel {
   }
 
   // set the role of a user in a deal
-  function setDealRole(uint dealIndex, uint8 index, address addr) external orderControllerOnly
+  function setDealRole(uint dealIndex, uint8 index, address addr) external controllerOnly
   {
     require(index >= 0 && index < 4);
     require(dealIndex <  deals.length);
@@ -282,7 +281,7 @@ contract OrderModel {
   }
 
   // set the numercial data value of a deal
-  function setDealNumericalData(uint dealIndex, uint8 index, uint value) external orderControllerOnly
+  function setDealNumericalData(uint dealIndex, uint8 index, uint value) external controllerOnly
   {
     require(index >= 0 && index < 11);
     require(dealIndex <  deals.length);
@@ -291,7 +290,7 @@ contract OrderModel {
   }
 
   // set the flag value of a deal
-  function setDealFlag(uint dealIndex, uint8 index, bool value) external orderControllerOnly
+  function setDealFlag(uint dealIndex, uint8 index, bool value) external controllerOnly
   {
     require(index >= 0 && index < 11);
     require(dealIndex <  deals.length);
@@ -300,13 +299,13 @@ contract OrderModel {
   }
 
   // set if direct deal rating to items is available
-  function setDirectDealRatingAllowed(bool isAllowed) public orderControllerOnly
+  function setDirectDealRatingAllowed(bool isAllowed) public controllerOnly
   {
     isDirectDealRatingAllowed = isAllowed;
   }
 
   // add a global deal index to a seller
-  function addDealIndex(address seller, uint dealIndex) external orderControllerOnly
+  function addDealIndex(address seller, uint dealIndex) external controllerOnly
   {
     require(seller != address(0));
 
@@ -314,7 +313,7 @@ contract OrderModel {
   }
 
   // remove a global deal index from a seller
-  function removeDealIndex(address seller, uint position) external orderControllerOnly
+  function removeDealIndex(address seller, uint position) external controllerOnly
   {
     require(seller != address(0));
     require(position < dealOwners[seller].length);
@@ -324,20 +323,7 @@ contract OrderModel {
     dealOwners[seller].pop();
   }
 
-  /*
-  // create a deal instance and returns its global deal index
-  function createDeal() external orderControllerOnly returns (uint)
-  {
-    SharedStructs.Deal memory deal;
-    deals.push(deal);
-
-    require(deals.length > 0, "deals.length must be > zero.");
-
-    return deals.length - 1;
-  }
-  */
-
-  function addDeal(SharedStructs.Deal calldata deal) external orderControllerOnly returns (uint)
+  function addDeal(SharedStructs.Deal calldata deal) external controllerOnly returns (uint)
   {
     deals.push(deal);
     return deals.length - 1;

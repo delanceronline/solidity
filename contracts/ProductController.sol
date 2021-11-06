@@ -70,7 +70,28 @@ contract ProductController {
   // ------------------------------------------------------------------------------------
   // User setting
   // ------------------------------------------------------------------------------------
+  /*
+  function addGlobalDiscount(address client, uint8 discountRate, bytes calldata additional) external
+  {
+    require(client != address(0));
 
+    ProductModel(Model(modelAddress).productModelAddress()).addGlobalDiscount(client, discountRate, additional);
+  }
+
+  function getGlobalDiscount(address client) external view returns (SharedStructs.ItemDiscount memory)
+  {
+    require(client != address(0));
+
+    return ProductModel(Model(modelAddress).productModelAddress()).getGlobalDiscount(client);
+  }
+  
+  function editGlobalDiscount(address client, uint8 discountRate, bytes calldata additional) external
+  {
+    require(client != address(0));
+
+    ProductModel(Model(modelAddress).productModelAddress()).editGlobalDiscount(client, discountRate, additional);
+  }
+  */
   // add a discount offer for a buyer to a specific item
   function addClientDiscount(address client, uint localItemIndex, uint8 discountRate, bytes calldata details) external
   {
