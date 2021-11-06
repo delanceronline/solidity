@@ -258,6 +258,11 @@ contract OrderDetailsController {
     return orderModel.getDealDispute(dealIndex);
   }
 
+  function getDisputedDealGlobalIndices() external view returns (uint[] memory)
+  {
+    return OrderModel(Model(modelAddress).orderModelAddress()).getDisputedDealGlobalIndices();
+  }
+
   // get basic details of a deal
   function getDealBasicDetails(uint localIndex) external view returns (uint, uint, uint, uint, uint, uint)
   {

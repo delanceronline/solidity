@@ -169,6 +169,20 @@ contract OrderManagementController {
 
     orderModel.setDealFlag(dealIndex, 5, true);
     orderModel.addDealDispute(dealIndex, details);
+
+    uint[] memory indices = orderModel.getDisputedDealGlobalIndices();
+    bool doesExist = false;
+    for(uint i = 0; i < indices.length; i++)
+    {
+      if(indices[i] == dealIndex)
+      {
+        doesExist = true;
+        break;
+      }
+    }
+    if(doesExist)
+      orderModel.addDisputedDealGlobalIndex(dealIndex);
+
     EventModel(Model(modelAddress).eventModelAddress()).onDisputeDealEmit(dealIndex, details);
   }
 

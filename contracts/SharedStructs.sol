@@ -54,6 +54,7 @@ library SharedStructs {
     bool shouldRefund;
     uint handlingFee;
     string note;
+    uint blockNumber;
   }
 
   // deal rating structure

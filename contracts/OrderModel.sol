@@ -50,6 +50,7 @@ contract OrderModel {
   mapping (address => SharedStructs.ModerationVote[]) public moderationVotes;
 
   mapping (uint => SharedStructs.DealDispute) public dealDisputes;
+  uint[] public disputedDealGlobalIndices;
 
   constructor(address addr)
   {
@@ -76,6 +77,7 @@ contract OrderModel {
     dispute.isResolved = false;
     dispute.shouldRefund = false;
     dispute.note = note;
+    dispute.blockNumber = block.number;
 
     dealDisputes[dealGlobalIndex] = dispute;
   }
@@ -87,6 +89,7 @@ contract OrderModel {
     dispute.shouldRefund = shouldRefund;
     dispute.handlingFee = handlingFee;
     dispute.note = note;
+    dispute.blockNumber = block.number;
   }
 
   function setDealDisputeResolved(uint dealGlobalIndex, bool shouldRefund, uint handlingFee) external controllerOnly
@@ -99,6 +102,16 @@ contract OrderModel {
   function getDealDispute(uint dealGlobalIndex) external view controllerOnly returns (SharedStructs.DealDispute memory)
   {
     return dealDisputes[dealGlobalIndex];
+  }
+
+  function addDisputedDealGlobalIndex(uint globalDealIndex) external controllerOnly
+  {
+    disputedDealGlobalIndices.push(globalDealIndex);
+  }
+
+  function getDisputedDealGlobalIndices() external view controllerOnly returns (uint[] memory)
+  {
+    return disputedDealGlobalIndices;
   }
 
   function addDealVote(address target, address voter, uint itemGlobalIndex, uint dealGlobalIndex, uint8 rating, bytes calldata review) external controllerOnly
