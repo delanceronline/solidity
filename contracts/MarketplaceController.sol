@@ -142,10 +142,10 @@ contract MarketplaceController {
   }
 
   // add a new marketplace announcement
-  function pushAnnouncement(uint id, bytes calldata title, bytes calldata message) adminOnly external
+  function addAnnouncement(bytes calldata title, bytes calldata message) adminOnly external
   {
     Model(modelAddress).addMarketAnnouncement(title, message);
-    EventModel(Model(modelAddress).eventModelAddress()).onPushAnnouncementEmit(id, title, message, true);
+    EventModel(Model(modelAddress).eventModelAddress()).onPushAnnouncementEmit(Model(modelAddress).getMarketAnnouncements().length, title, message, true);
   }
 
   // update an existing announcement
@@ -289,6 +289,25 @@ contract MarketplaceController {
     return Model(modelAddress).marketPGPPublicKey();
   }
 
+  function addCustomizedController(address controller) external adminOnly
+  {
+    Model(modelAddress).addCustomizedController(controller);
+  }
+
+  function removeCustomizedController(address controller) external adminOnly
+  {
+    Model(modelAddress).removeCustomizedController(controller);
+  }
+
+  function addCustomizedModel(address model) external adminOnly
+  {
+    Model(modelAddress).addCustomizedModel(model);
+  }
+
+  function removeCustomizedModel(address model) external adminOnly
+  {
+    Model(modelAddress).removeCustomizedModel(model);
+  }
 
   // add a bound for a turnover tier of marketplace's commission
   function addMarketplaceCommissionBound(uint value) external adminOnly

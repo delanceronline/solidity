@@ -70,7 +70,7 @@ contract ProductController {
   // ------------------------------------------------------------------------------------
   // User setting
   // ------------------------------------------------------------------------------------
-  /*
+  
   function addGlobalDiscount(address client, uint8 discountRate, bytes calldata additional) external
   {
     require(client != address(0));
@@ -91,7 +91,7 @@ contract ProductController {
 
     ProductModel(Model(modelAddress).productModelAddress()).editGlobalDiscount(client, discountRate, additional);
   }
-  */
+  
   // add a discount offer for a buyer to a specific item
   function addClientDiscount(address client, uint localItemIndex, uint8 discountRate, bytes calldata details) external
   {
@@ -158,11 +158,13 @@ contract ProductController {
     return true;    
   }
 
+  /*
   // set an item as a favour one of a user
   function setFavourItem(uint igi, bool isEnabled) external
   {
     EventModel(Model(modelAddress).eventModelAddress()).onSetFavourItemEmit(msg.sender, igi, isEnabled);
   }
+  */
 
   // ------------------------------------------------------------------------------------
   // Product management
@@ -391,6 +393,7 @@ contract ProductController {
     }
   }
 
+  /*
   // set a tag for an item
   function setItemTag(uint localItemIndex, bytes32 lowerCaseHash, bytes32 originalHash, bytes calldata tag, bool isEnabled) external
   {
@@ -406,7 +409,8 @@ contract ProductController {
     model.addHashTag(lowerCaseHash, igi, tag, isEnabled);
     EventModel(Model(modelAddress).eventModelAddress()).onSetItemTagEmit(igi, lowerCaseHash, originalHash, tag, isEnabled);
   }
-
+  */
+  
   // set the no dispute period of an item in terms of the number of blocks
   function setNoDisputePeriodOfItem(uint localItemIndex, uint period) external
   {

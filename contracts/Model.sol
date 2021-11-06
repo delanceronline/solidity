@@ -745,8 +745,6 @@ contract Model {
       if(customizedModels[i] == model)
       {
         customizedModels[i] = customizedModels[customizedModels.length - 1];
-        //delete customizedModels[customizedModels.length - 1];
-        //customizedModels.length--;
         customizedModels.pop();
 
         break;
