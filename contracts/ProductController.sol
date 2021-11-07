@@ -75,21 +75,21 @@ contract ProductController {
   {
     require(client != address(0));
 
-    ProductModel(Model(modelAddress).productModelAddress()).addGlobalDiscount(client, discountRate, additional);
+    ProductModel(Model(modelAddress).productModelAddress()).addGlobalDiscount(msg.sender, client, discountRate, additional);
   }
 
-  function getGlobalDiscount(address client) external view returns (SharedStructs.ItemDiscount memory)
+  function getGlobalDiscounts(address seller) external view returns (SharedStructs.ItemDiscount[] memory)
   {
-    require(client != address(0));
+    require(seller != address(0));
 
-    return ProductModel(Model(modelAddress).productModelAddress()).getGlobalDiscount(client);
+    return ProductModel(Model(modelAddress).productModelAddress()).getGlobalDiscounts(seller);
   }
   
   function editGlobalDiscount(address client, uint8 discountRate, bytes calldata additional) external
   {
     require(client != address(0));
 
-    ProductModel(Model(modelAddress).productModelAddress()).editGlobalDiscount(client, discountRate, additional);
+    ProductModel(Model(modelAddress).productModelAddress()).editGlobalDiscount(msg.sender, client, discountRate, additional);
   }
   
   // add a discount offer for a buyer to a specific item
@@ -327,16 +327,9 @@ contract ProductController {
     }
   }
 
-  function getItemDetails(uint localItemIndex) external view returns (bytes memory)
+  function getItemDetails(uint itemGlobalIndex) external view returns (bytes memory)
   { 
-    ProductModel model = ProductModel(Model(modelAddress).productModelAddress());
-
-    require(model.getItemCount(msg.sender) > 0, "You can only edit your own item.");
-
-    uint igi = model.getItemGlobalIndex(msg.sender, localItemIndex);
-    require(igi > 0, 'invalid item index provided');
-
-    return model.getItemDetail(igi);
+    return ProductModel(Model(modelAddress).productModelAddress()).getItemDetail(itemGlobalIndex);
   }
 
   // set the category index of an item

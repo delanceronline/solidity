@@ -54,7 +54,7 @@ contract ProductModel {
   mapping (uint => SharedStructs.ItemDiscount[]) public itemDiscounts;
 
   // global discounts for users
-  mapping (address => SharedStructs.ItemDiscount) public globalDiscounts;
+  mapping (address => SharedStructs.ItemDiscount[]) public globalDiscounts;
 
   // batch purchase offers for items
   mapping (uint => bytes) public batchOffers;
@@ -96,7 +96,7 @@ contract ProductModel {
     }
   }
 
-  function addGlobalDiscount(address client, uint8 discountRate, bytes calldata additional) external controllerOnly
+  function addGlobalDiscount(address seller, address client, uint8 discountRate, bytes calldata additional) external controllerOnly
   {
     require(client != address(0));
 
@@ -104,24 +104,33 @@ contract ProductModel {
     discount.client = client;
     discount.discountRate = discountRate;
     discount.additional = additional;
+    discount.blockNumber = block.number;
 
-    globalDiscounts[client] = discount;
+    globalDiscounts[seller].push(discount);
   }
 
-  function getGlobalDiscount(address client) external view controllerOnly returns (SharedStructs.ItemDiscount memory)
+  function getGlobalDiscounts(address seller) external view controllerOnly returns (SharedStructs.ItemDiscount[] memory)
+  {
+    require(seller != address(0));
+
+    return globalDiscounts[seller];
+  }
+
+  function editGlobalDiscount(address seller, address client, uint8 discountRate, bytes calldata additional) external controllerOnly
   {
     require(client != address(0));
 
-    return globalDiscounts[client];
-  }
+    SharedStructs.ItemDiscount[] storage discounts = globalDiscounts[seller];
+    for(uint i = 0; i < discounts.length; i++)
+    {
+      if(discounts[i].client == client)
+      {
+        discounts[i].discountRate = discountRate;
+        discounts[i].additional = additional;
 
-  function editGlobalDiscount(address client, uint8 discountRate, bytes calldata additional) external controllerOnly
-  {
-    require(client != address(0));
-
-    SharedStructs.ItemDiscount storage discount = globalDiscounts[client];
-    discount.discountRate = discountRate;
-    discount.additional = additional;
+        break;      
+      }
+    }
   }
 
   function addItemDiscount(uint igi, address client, uint8 discountRate, bytes calldata additional) external controllerOnly
