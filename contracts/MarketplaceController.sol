@@ -315,6 +315,13 @@ contract MarketplaceController {
     EventModel(Model(modelAddress).eventModelAddress()).onAddUserProfileEmit(msg.sender, nickNameHash, nickName, about, publicOpenPGPKey, additional);
   }
 
+  function getProfile(address user) external view returns (SharedStructs.UserProfile memory)
+  {
+    require(user != address(0));
+
+    return Model(modelAddress).getUserProfile(user);
+  }
+
   // check if a seller is banned
   function isSellerBanned(address seller) view external returns (bool)
   {

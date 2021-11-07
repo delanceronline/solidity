@@ -77,6 +77,7 @@ contract ProductModel {
     hashTag.igi = igi;
     hashTag.tag = tag;
     hashTag.isEnabled = isEnabled;
+    hashTag.blockNumber = block.number;
 
     hashTags[lowerCaseHash].push(hashTag);
   }
@@ -131,6 +132,7 @@ contract ProductModel {
     discount.client = client;
     discount.discountRate = discountRate;
     discount.additional = additional;
+    discount.blockNumber = block.number;
 
     itemDiscounts[igi].push(discount);
   }

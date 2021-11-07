@@ -119,7 +119,7 @@ contract ProductController {
       }
     }
 
-    return SharedStructs.ItemDiscount(address(0), 0, '');
+    return SharedStructs.ItemDiscount(address(0), 0, '', 0);
   }
 
   // add a batch purchase offer to an item
@@ -410,7 +410,7 @@ contract ProductController {
     EventModel(Model(modelAddress).eventModelAddress()).onSetItemTagEmit(igi, lowerCaseHash, originalHash, tag, isEnabled);
   }
   */
-  
+
   // set the no dispute period of an item in terms of the number of blocks
   function setNoDisputePeriodOfItem(uint localItemIndex, uint period) external
   {

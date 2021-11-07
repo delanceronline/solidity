@@ -125,6 +125,7 @@ contract OrderModel {
     vote.dealGlobalIndex = dealGlobalIndex;
     vote.rating = rating;
     vote.review = review;
+    vote.blockNumber = block.number;
 
     dealVotes[target].push(vote);
   }
@@ -168,6 +169,7 @@ contract OrderModel {
     vote.dealGlobalIndex = dealGlobalIndex;
     vote.rating = rating;
     vote.review = review;
+    vote.blockNumber = block.number;
 
     moderationVotes[target].push(vote);
   }

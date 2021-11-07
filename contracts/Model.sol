@@ -283,6 +283,7 @@ contract Model {
     pm.sender = sender;
     pm.details = details;
     pm.isRead = false;
+    pm.blockNumber = block.number;
 
     privateMessages[receiver].push(pm);
   }
@@ -312,6 +313,7 @@ contract Model {
     userProfile.about = about;
     userProfile.publicOpenPGPKey = publicOpenPGPKey;
     userProfile.additional = additional;
+    userProfile.blockNumber = block.number;
 
     userProfiles[user] = userProfile;
   }

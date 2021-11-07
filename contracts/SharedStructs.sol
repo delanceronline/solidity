@@ -65,6 +65,7 @@ library SharedStructs {
     uint  dealGlobalIndex;
     uint8 rating;
     bytes review;
+    uint blockNumber;
   }
 
   // rating to a moderator for a dispute
@@ -74,6 +75,7 @@ library SharedStructs {
     uint  dealGlobalIndex;
     uint8 rating;
     bytes review;
+    uint blockNumber;
   }
 
   // item's structure
@@ -111,6 +113,7 @@ library SharedStructs {
     bytes about;
     string publicOpenPGPKey;
     bytes additional;
+    uint blockNumber;
   }
 
   // item discount structure
@@ -119,6 +122,7 @@ library SharedStructs {
     address client;
     uint8 discountRate;
     bytes additional;
+    uint blockNumber;
   }
 
   // hash tag structure
@@ -126,6 +130,7 @@ library SharedStructs {
   {
     uint igi;
     bytes tag;
+    uint blockNumber;
     bool isEnabled;
   }
 
@@ -135,5 +140,6 @@ library SharedStructs {
     address sender;
     bytes details;
     bool isRead;
+    uint blockNumber;
   }
 }
