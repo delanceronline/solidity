@@ -161,14 +161,17 @@ contract OrderDetailsController {
     return count;
   }
 
-  // get a list of finalized deals of a seller
-  function getFinalizedDeals(address seller) external view returns (SharedStructs.Deal[] memory)
+  // get a list of finalized deals of a user
+  // flag --- 0, both as a buyer or seller
+  // flag --- 1, as a buyer
+  // flag --- 2, as a seller
+  function getFinalizedDeals(address user, uint8 flag) external view returns (SharedStructs.Deal[] memory)
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
-    SharedStructs.Deal[] memory deals = new SharedStructs.Deal[](getNumOfFinalizedDeals(seller));
+    SharedStructs.Deal[] memory deals = new SharedStructs.Deal[](getNumOfFinalizedDeals(user));
 
-    uint[] memory dealIndices = orderModel.getDeals(seller);
+    uint[] memory dealIndices = orderModel.getDeals(user);
     SharedStructs.Deal[] memory allDeals = orderModel.getAllDeals();
 
     uint count = 0;
@@ -176,8 +179,21 @@ contract OrderDetailsController {
     {
       if(allDeals[dealIndices[i]].flags[2] == true)
       {
-        deals[count] = allDeals[dealIndices[i]];
-        count++;
+        if(flag == 0)
+        {
+          deals[count] = allDeals[dealIndices[i]];
+          count++;        
+        }
+        else if(flag == 1 && allDeals[dealIndices[i]].roles[0] == user)
+        {
+          deals[count] = allDeals[dealIndices[i]];
+          count++;
+        }
+        else if(flag == 2 && allDeals[dealIndices[i]].roles[1] == user)
+        {
+          deals[count] = allDeals[dealIndices[i]];
+          count++;        
+        }
       }
     }
 
