@@ -236,6 +236,11 @@ contract ProductController {
     return ProductModel(Model(modelAddress).productModelAddress()).numOfItemsOfCategory(category);
   }
 
+  function getItemIndicesFromCategory(uint8 category) external view returns (uint[] memory)
+  {
+    return ProductModel(Model(modelAddress).productModelAddress()).getItemIndicesFromCategory(category);
+  }
+
   // increase the quantity left of an item
   function plusProductQuantity(uint igi, uint count) external controllerOnly
   {

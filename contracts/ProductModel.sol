@@ -522,6 +522,11 @@ contract ProductModel {
     return itemCategories[category].length;
   }
 
+  function getItemIndicesFromCategory(uint8 category) external view controllerOnly returns (uint[] memory)
+  {
+    return itemCategories[category];
+  }
+
   // return the item details from a vendor, by given a local index
   function getItemByVendor(address vendor, uint localItemIndex) external view returns (uint8, uint, bool, bytes memory, uint, uint, uint, bool, uint){
 
