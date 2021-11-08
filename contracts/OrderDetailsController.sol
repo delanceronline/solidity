@@ -189,12 +189,41 @@ contract OrderDetailsController {
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
-    SharedStructs.Deal[] memory deals = new SharedStructs.Deal[](getNumOfFinalizedDeals(user));
-
     uint[] memory dealIndices = orderModel.getDeals(user);
     SharedStructs.Deal[] memory allDeals = orderModel.getAllDeals();
 
     uint count = 0;
+    for(uint i = 0; i < dealIndices.length; i++)
+    {
+      if(allDeals[dealIndices[i]].flags[2] == true)
+      {
+        if(flag == 0)
+        {
+          //deals[count] = allDeals[dealIndices[i]];
+          count++;        
+        }
+        else if(flag == 1 && allDeals[dealIndices[i]].roles[0] == user)
+        {
+          //deals[count] = allDeals[dealIndices[i]];
+          count++;
+        }
+        else if(flag == 2 && allDeals[dealIndices[i]].roles[1] == user)
+        {
+          //deals[count] = allDeals[dealIndices[i]];
+          count++;        
+        }
+      }
+    }
+
+    if(count == 0)
+    {
+      SharedStructs.Deal[] memory nothing;
+      return nothing;
+    }
+
+    SharedStructs.Deal[] memory deals = new SharedStructs.Deal[](count);
+
+    count = 0;
     for(uint i = 0; i < dealIndices.length; i++)
     {
       if(allDeals[dealIndices[i]].flags[2] == true)
