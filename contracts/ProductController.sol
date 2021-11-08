@@ -85,6 +85,18 @@ contract ProductController {
     return ProductModel(Model(modelAddress).productModelAddress()).getGlobalDiscounts(seller);
   }
   
+  function getGlobalDiscount(address seller, address buyer) external view returns (SharedStructs.ItemDiscount memory)
+  {
+    SharedStructs.ItemDiscount[] memory discounts = ProductModel(Model(modelAddress).productModelAddress()).getGlobalDiscounts(seller);
+    for(uint i = 0; i < discounts.length; i++)
+    {
+      if(buyer == discounts[i].client)
+        return discounts[i];
+    }
+
+    return SharedStructs.ItemDiscount(address(0), 0, '0x00', 0);
+  }
+
   function editGlobalDiscount(address client, uint8 discountRate, bytes calldata additional) external
   {
     require(client != address(0));
@@ -105,12 +117,12 @@ contract ProductController {
 
   function getProductDiscountsToClients(uint igi) external view returns (SharedStructs.ItemDiscount[] memory)
   {
-    return ProductModel(Model(modelAddress).productModelAddress()).getItemDiscounts(igi);
+    return ProductModel(Model(modelAddress).productModelAddress()).getItemDiscounts(igi.sub(1));
   }
 
   function getClientDiscount(address client, uint igi) external view returns (SharedStructs.ItemDiscount memory)
   {
-    SharedStructs.ItemDiscount[] memory discounts = ProductModel(Model(modelAddress).productModelAddress()).getItemDiscounts(igi);
+    SharedStructs.ItemDiscount[] memory discounts = ProductModel(Model(modelAddress).productModelAddress()).getItemDiscounts(igi.sub(1));
     for(uint i = 0; i < discounts.length; i++)
     {
       if(discounts[i].client == client)
@@ -157,14 +169,6 @@ contract ProductController {
 
     return true;    
   }
-
-  /*
-  // set an item as a favour one of a user
-  function setFavourItem(uint igi, bool isEnabled) external
-  {
-    EventModel(Model(modelAddress).eventModelAddress()).onSetFavourItemEmit(msg.sender, igi, isEnabled);
-  }
-  */
 
   // ------------------------------------------------------------------------------------
   // Product management
@@ -391,24 +395,6 @@ contract ProductController {
       model.setItemIsQuantityLimited(igi.sub(1), isQuantityLimited);
     }
   }
-
-  /*
-  // set a tag for an item
-  function setItemTag(uint localItemIndex, bytes32 lowerCaseHash, bytes32 originalHash, bytes calldata tag, bool isEnabled) external
-  {
-    ProductModel model = ProductModel(Model(modelAddress).productModelAddress());
-
-    require(model.getItemCount(msg.sender) > 0, "You can only edit your own item.");
-
-    uint igi = model.getItemGlobalIndex(msg.sender, localItemIndex);
-    require(igi > 0);
-
-    require(model.getItemCategory(igi.sub(1)) != 0);
-
-    model.addHashTag(lowerCaseHash, igi, tag, isEnabled);
-    EventModel(Model(modelAddress).eventModelAddress()).onSetItemTagEmit(igi, lowerCaseHash, originalHash, tag, isEnabled);
-  }
-  */
 
   // set the no dispute period of an item in terms of the number of blocks
   function setNoDisputePeriodOfItem(uint localItemIndex, uint period) external
