@@ -65,9 +65,11 @@ contract OrderDetailsController {
   }
 
   // get the number of votes to a seller of an item
-  function getNumOfDealVotesOfItem(address target, uint igi) public view returns (uint)
+  function getNumOfDealVotesOfItem(uint igi) public view returns (uint)
   {
-    require(target != address(0));
+    //require(target != address(0));
+
+    address target = ProductController(Model(modelAddress).productControllerAddress()).getItemOwner(igi);
 
     uint count = 0;
 
@@ -82,11 +84,13 @@ contract OrderDetailsController {
   }
 
   // get a list of votes to a seller of an item
-  function getDealVotesOfItem(address target, uint igi) external view returns (SharedStructs.DealVote[] memory)
+  function getDealVotesOfItem(uint igi) external view returns (SharedStructs.DealVote[] memory)
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
-    SharedStructs.DealVote[] memory votes = new SharedStructs.DealVote[](getNumOfDealVotesOfItem(target, igi));
+    SharedStructs.DealVote[] memory votes = new SharedStructs.DealVote[](getNumOfDealVotesOfItem(igi));
+
+    address target = ProductController(Model(modelAddress).productControllerAddress()).getItemOwner(igi);
     SharedStructs.DealVote[] memory allSellerVotes = orderModel.getDealVotes(target);
 
     uint count = 0;
@@ -143,11 +147,13 @@ contract OrderDetailsController {
     return count;
   }
 
-  function getNumOfFinalizedDealsOfItem(address seller, uint igi) public view returns (uint)
+  function getNumOfFinalizedDealsOfItem(uint igi) public view returns (uint)
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
     SharedStructs.Deal[] memory allDeals = orderModel.getAllDeals();
+
+    address seller = ProductController(Model(modelAddress).productControllerAddress()).getItemOwner(igi);
     uint[] memory dealIndices = orderModel.getDeals(seller);
 
     uint count = 0;
@@ -201,11 +207,12 @@ contract OrderDetailsController {
   }
 
   // get a list of finalized deals of an item of a seller 
-  function getFinalizedDealOfItem(address seller, uint igi) external view returns (SharedStructs.Deal[] memory)
+  function getFinalizedDealsOfItem(uint igi) external view returns (SharedStructs.Deal[] memory)
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
+    address seller = ProductController(Model(modelAddress).productControllerAddress()).getItemOwner(igi);
 
-    SharedStructs.Deal[] memory deals = new SharedStructs.Deal[](getNumOfFinalizedDealsOfItem(seller, igi));
+    SharedStructs.Deal[] memory deals = new SharedStructs.Deal[](getNumOfFinalizedDealsOfItem(igi));
 
     uint[] memory dealIndices = orderModel.getDeals(seller);
     SharedStructs.Deal[] memory allDeals = orderModel.getAllDeals();

@@ -447,6 +447,11 @@ contract ProductController {
     EventModel(Model(modelAddress).eventModelAddress()).onSetItemOfCategoryEmit(category, igi, title, true);
   }
 
+  function getItemOwner(uint itemGlobalIndex) external view returns (address)
+  {
+    return ProductModel(Model(modelAddress).productModelAddress()).getItemOwner(itemGlobalIndex);
+  }
+
   // return the item details from a vendor, by given a local index
   function getItemByVendor(address vendor, uint localItemIndex) external view returns (uint8, uint, bool, bytes memory, uint, uint, uint, bool, uint)
   {
