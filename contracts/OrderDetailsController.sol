@@ -94,7 +94,7 @@ contract OrderDetailsController {
       SharedStructs.DealVote[] memory nothing;
       return nothing;
     }
-    
+
     SharedStructs.DealVote[] memory votes = new SharedStructs.DealVote[](numOfDealVotes);
 
     address target = ProductController(Model(modelAddress).productControllerAddress()).getItemOwner(igi);
@@ -125,6 +125,13 @@ contract OrderDetailsController {
     }
 
     return false;
+  }
+
+  function getDeals(address owner) external view returns (uint[] memory)
+  {
+    require(owner != address(0));
+
+    return OrderModel(Model(modelAddress).orderModelAddress()).getDeals(owner);
   }
 
   // get number of created deals of a user
