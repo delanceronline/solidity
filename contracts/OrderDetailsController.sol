@@ -88,7 +88,14 @@ contract OrderDetailsController {
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
-    SharedStructs.DealVote[] memory votes = new SharedStructs.DealVote[](getNumOfDealVotesOfItem(igi));
+    uint numOfDealVotes = getNumOfDealVotesOfItem(igi);
+    if(numOfDealVotes == 0)
+    {
+      SharedStructs.DealVote[] memory nothing;
+      return nothing;
+    }
+    
+    SharedStructs.DealVote[] memory votes = new SharedStructs.DealVote[](numOfDealVotes);
 
     address target = ProductController(Model(modelAddress).productControllerAddress()).getItemOwner(igi);
     SharedStructs.DealVote[] memory allSellerVotes = orderModel.getDealVotes(target);
@@ -212,7 +219,14 @@ contract OrderDetailsController {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
     address seller = ProductController(Model(modelAddress).productControllerAddress()).getItemOwner(igi);
 
-    SharedStructs.Deal[] memory deals = new SharedStructs.Deal[](getNumOfFinalizedDealsOfItem(igi));
+    uint numOfFinalizedDeals = getNumOfFinalizedDealsOfItem(igi);
+    if(numOfFinalizedDeals == 0)
+    {
+      SharedStructs.Deal[] memory nothing;
+      return nothing;
+    }
+
+    SharedStructs.Deal[] memory deals = new SharedStructs.Deal[](numOfFinalizedDeals);
 
     uint[] memory dealIndices = orderModel.getDeals(seller);
     SharedStructs.Deal[] memory allDeals = orderModel.getAllDeals();

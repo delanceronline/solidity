@@ -117,12 +117,12 @@ contract ProductController {
 
   function getProductDiscountsToClients(uint igi) external view returns (SharedStructs.ItemDiscount[] memory)
   {
-    return ProductModel(Model(modelAddress).productModelAddress()).getItemDiscounts(igi.sub(1));
+    return ProductModel(Model(modelAddress).productModelAddress()).getItemDiscounts(igi);
   }
 
   function getClientDiscount(address client, uint igi) external view returns (SharedStructs.ItemDiscount memory)
   {
-    SharedStructs.ItemDiscount[] memory discounts = ProductModel(Model(modelAddress).productModelAddress()).getItemDiscounts(igi.sub(1));
+    SharedStructs.ItemDiscount[] memory discounts = ProductModel(Model(modelAddress).productModelAddress()).getItemDiscounts(igi);
     for(uint i = 0; i < discounts.length; i++)
     {
       if(discounts[i].client == client)
