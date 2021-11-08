@@ -236,6 +236,7 @@ contract ProductController {
     return ProductModel(Model(modelAddress).productModelAddress()).numOfItemsOfCategory(category);
   }
 
+  // get a list of item global indices under a category
   function getItemIndicesFromCategory(uint8 category) external view returns (uint[] memory)
   {
     return ProductModel(Model(modelAddress).productModelAddress()).getItemIndicesFromCategory(category);

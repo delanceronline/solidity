@@ -41,8 +41,10 @@ contract ProductModel {
   // item list
   SharedStructs.Item[] public listedItems;
 
-  // store the global item indice of a vendor
+  // store the global item indices of a vendor
   mapping (address => uint[]) public itemOwners;
+
+  mapping (uint => address) public itemBelongsTo;
   
   // store the item indice of a category
   mapping (uint8 => uint[]) public itemCategories;
@@ -344,9 +346,7 @@ contract ProductModel {
 
   // add a new item to the list in product model
   function addItem(uint8 category, uint priceUSD, bytes calldata title, uint quantityLeft, bool isQuantityLimited, uint noDisputePeriod, uint shippingPeriod, uint validBlockCount) external controllerOnly
-  {
-    //listedItems.push(SharedStructs.Item(category, priceUSD, true, title, '', 0, 0, quantityLeft, isQuantityLimited, false, false, noDisputePeriod, shippingPeriod, block.number, validBlockCount));
-    
+  {    
     SharedStructs.Item memory item;
     item.category = category;
     item.priceUSD = priceUSD;
@@ -362,8 +362,7 @@ contract ProductModel {
     item.shippingPeriod = shippingPeriod;
     item.creationBlockNumber = block.number;
     item.validBlockCount = validBlockCount;
-    listedItems.push(item);
-    
+    listedItems.push(item);    
   }
 
   // set item category index of an item
@@ -488,6 +487,7 @@ contract ProductModel {
     require(seller != address(0));
 
     itemOwners[seller].push(itemIndex);
+    itemBelongsTo[itemIndex] = seller;
   }
 
   // remove the global item index of an item from an item seller / owner
@@ -497,8 +497,12 @@ contract ProductModel {
     require(position < itemOwners[seller].length);
 
     itemOwners[seller][position] = itemOwners[seller][itemOwners[seller].length.sub(1)];
-    //itemOwners[seller].length--;
     itemOwners[seller].pop();
+  }
+
+  function getItemOwner(uint globalItemIndex) external view controllerOnly returns (address)
+  {
+    return itemBelongsTo[globalItemIndex];
   }
 
   // add a global item index of an item to a category
