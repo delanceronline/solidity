@@ -111,8 +111,11 @@ contract ProductController {
 
     uint igi = ProductModel(Model(modelAddress).productModelAddress()).getItemGlobalIndex(msg.sender, localItemIndex);
 
-    ProductModel(Model(modelAddress).productModelAddress()).addItemDiscount(igi, client, discountRate, details);
-    EventModel(Model(modelAddress).eventModelAddress()).onAddDiscountToClientEmit(msg.sender, client, igi, discountRate, details);
+    if(!ProductModel(Model(modelAddress).productModelAddress()).doesItemDiscountExist(igi, client))
+    {
+      ProductModel(Model(modelAddress).productModelAddress()).addItemDiscount(igi, client, discountRate, details);
+      EventModel(Model(modelAddress).eventModelAddress()).onAddDiscountToClientEmit(msg.sender, client, igi, discountRate, details);    
+    }
   }
 
   function getProductDiscountsToClients(uint igi) external view returns (SharedStructs.ItemDiscount[] memory)

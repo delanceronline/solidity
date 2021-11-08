@@ -148,9 +148,28 @@ contract ProductModel {
     itemDiscounts[igi].push(discount);
   }
 
-  function getItemDiscounts(uint igi) external view controllerOnly returns (SharedStructs.ItemDiscount[] memory)
+  function getItemDiscounts(uint igi) public view controllerOnly returns (SharedStructs.ItemDiscount[] memory)
   {
     return itemDiscounts[igi];
+  }
+
+  function doesItemDiscountExist(uint igi, address client) external view returns (bool)
+  {
+    require(client != address(0));
+
+    SharedStructs.ItemDiscount[] memory discounts = getItemDiscounts(igi);
+
+    bool isFound = false;
+    for(uint i = 0; i < discounts.length; i++)
+    {
+      if(discounts[i].client == client)
+      {
+        isFound = true;
+        break;
+      }
+    }
+
+    return isFound;
   }
 
   function editItemDiscount(uint igi, address client, uint8 discountRate, bytes calldata additional) external controllerOnly
