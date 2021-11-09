@@ -180,7 +180,7 @@ contract OrderManagementController {
         break;
       }
     }
-    if(doesExist)
+    if(!doesExist)
       orderModel.addDisputedDealGlobalIndex(dealIndex);
 
     EventModel(Model(modelAddress).eventModelAddress()).onDisputeDealEmit(dealIndex, details);
