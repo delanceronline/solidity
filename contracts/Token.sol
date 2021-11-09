@@ -154,9 +154,9 @@ contract Token is Context, IERC20, IERC20Metadata {
 
     }
 
-    function updatePoolInflow(uint inflowAmount) external orderEscrowOnly 
+    function updatePoolInflow(uint inflowAmount) external orderEscrowOnly
     {
-      uint256 available = (inflowAmount.mul(scaling)).add(scaledRemainder);
+      uint256 available = (inflowAmount.mul(scaling)).add(scaledRemainder).mul(Model(modelAddress).staleCoinDecimalDifferencePowered());
 
       if(circulationTotal > 0)
       {
