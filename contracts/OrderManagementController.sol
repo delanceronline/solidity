@@ -56,7 +56,7 @@ contract OrderManagementController {
       orderModel.setDealNumericalData(globalDealIndex, 7, totalAmount.sub(handlingFee));        
       
       // send handling fee to moderator
-      OrderEscrow(Model(modelAddress).orderEscrowAddress()).transferStabeCoin(msg.sender, handlingFee);
+      OrderEscrow(Model(modelAddress).orderEscrowAddress()).transferStabeCoin(msg.sender, handlingFee.div(Model(modelAddress).staleCoinDecimalDifferencePowered()));
     }
 
     orderModel.setDealDisputeResolved(globalDealIndex, shouldRefund, handlingFee);
@@ -93,7 +93,7 @@ contract OrderManagementController {
       ProductController(Model(modelAddress).productControllerAddress()).addItemDealCountByOne(orderModel.getDealNumericalData(dealIndex, 5));
 
       //tx.origin.transfer(deal.numericalData[7]);
-      OrderEscrow(Model(modelAddress).orderEscrowAddress()).transferStabeCoin(msg.sender, orderModel.getDealNumericalData(dealIndex, 7));
+      OrderEscrow(Model(modelAddress).orderEscrowAddress()).transferStabeCoin(msg.sender, orderModel.getDealNumericalData(dealIndex, 7).div(Model(modelAddress).staleCoinDecimalDifferencePowered()));
     }
   }
   
@@ -148,7 +148,7 @@ contract OrderManagementController {
       orderModel.setDealFlag(dealIndex, 3, true);
       orderModel.setDealFlag(dealIndex, 4, false);
 
-      OrderEscrow(Model(modelAddress).orderEscrowAddress()).transferStabeCoin(orderModel.getDealRole(dealIndex, 0), orderModel.getDealNumericalData(dealIndex, 7));
+      OrderEscrow(Model(modelAddress).orderEscrowAddress()).transferStabeCoin(orderModel.getDealRole(dealIndex, 0), orderModel.getDealNumericalData(dealIndex, 7).div(Model(modelAddress).staleCoinDecimalDifferencePowered()));
     }
   }
 
@@ -222,7 +222,7 @@ contract OrderManagementController {
     require(!orderModel.getDealFlag(dealIndex, 3) && !orderModel.getDealFlag(dealIndex, 2) && msg.sender == orderModel.getDealRole(dealIndex, 0) && (!orderModel.getDealFlag(dealIndex, 4) || (orderModel.getDealFlag(dealIndex, 4) && !orderModel.getDealFlag(dealIndex, 1) && (block.number - orderModel.getDealNumericalData(dealIndex, 2) > orderModel.getDealNumericalData(dealIndex, 9))) || (orderModel.getDealFlag(dealIndex, 5) && (orderModel.getDealFlag(dealIndex, 6) && orderModel.getDealFlag(dealIndex, 7)))));
 
     orderModel.setDealFlag(dealIndex, 3, true);
-    OrderEscrow(Model(modelAddress).orderEscrowAddress()).transferStabeCoin(msg.sender, orderModel.getDealNumericalData(dealIndex, 7));
+    OrderEscrow(Model(modelAddress).orderEscrowAddress()).transferStabeCoin(msg.sender, orderModel.getDealNumericalData(dealIndex, 7).div(Model(modelAddress).staleCoinDecimalDifferencePowered()));
 
     ProductController(Model(modelAddress).productControllerAddress()).plusProductQuantity(orderModel.getDealNumericalData(dealIndex, 5), orderModel.getDealNumericalData(dealIndex, 6));
   }
