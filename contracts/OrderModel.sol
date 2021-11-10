@@ -95,6 +95,7 @@ contract OrderModel {
   function setDealDisputeResolved(uint dealGlobalIndex, bool shouldRefund, uint handlingFee) external controllerOnly
   {
     SharedStructs.DealDispute storage dispute = dealDisputes[dealGlobalIndex];
+    dispute.isResolved = true;
     dispute.shouldRefund = shouldRefund;
     dispute.handlingFee = handlingFee;
   }
