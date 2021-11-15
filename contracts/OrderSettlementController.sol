@@ -31,7 +31,7 @@ contract OrderSettlementController {
   }
 
   // called by seller only, to finalize a shipped deal after dispute period expired
-  function finalizeDealWithoutDispute(uint localDealIndex) external
+  function finalizeDealWithoutDispute(uint localDealIndex, uint coinIndex) external
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
@@ -51,11 +51,11 @@ contract OrderSettlementController {
     // increase completed deal count by 1
     ProductController(Model(modelAddress).productControllerAddress()).addItemDealCountByOne(orderModel.getDealNumericalData(dealIndex, 5));
 
-    releaseFunds(orderModel.getDealRole(dealIndex, 1), orderModel.getDealRole(dealIndex, 2), orderModel.getDealNumericalData(dealIndex, 8), orderModel.getDealNumericalData(dealIndex, 7));
+    releaseFunds(orderModel.getDealRole(dealIndex, 1), orderModel.getDealRole(dealIndex, 2), orderModel.getDealNumericalData(dealIndex, 8), orderModel.getDealNumericalData(dealIndex, 7), coinIndex);
   }
 
   // called by buyer only, to finalize a shipped deal
-  function finalizeDeal(uint localDealIndex, uint8 rating, bytes calldata review) external
+  function finalizeDeal(uint localDealIndex, uint8 rating, bytes calldata review, uint coinIndex) external
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
@@ -79,16 +79,17 @@ contract OrderSettlementController {
     ProductController(Model(modelAddress).productControllerAddress()).addItemDealCountByOne(orderModel.getDealNumericalData(dealIndex, 5));
     ProductController(Model(modelAddress).productControllerAddress()).addItemRatingScore(orderModel.getDealNumericalData(dealIndex, 5), rating);
 
-    releaseFunds(orderModel.getDealRole(dealIndex, 1), orderModel.getDealRole(dealIndex, 2), orderModel.getDealNumericalData(dealIndex, 8), orderModel.getDealNumericalData(dealIndex, 7));
+    releaseFunds(orderModel.getDealRole(dealIndex, 1), orderModel.getDealRole(dealIndex, 2), orderModel.getDealNumericalData(dealIndex, 8), orderModel.getDealNumericalData(dealIndex, 7), coinIndex);
   }
 
   // an internal function, to release funds to seller, referee (if any) and marketplace's dividend pool, during finalization
-  function releaseFunds(address sellerAddress, address refereeAddress, uint dealMarketCommission, uint dealTotalAmountInWei) internal
+  function releaseFunds(address sellerAddress, address refereeAddress, uint dealMarketCommission, uint dealTotalAmountInWei, uint coinIndex) internal
   {
-    Token delaToken = Token(Model(modelAddress).tokenAddress());
-    StableCoin stableCoin = StableCoin(Model(modelAddress).stableCoinAddress());
+    Token delaToken = Token(Model(modelAddress).tokenAddresses(coinIndex));
+    //StableCoin stableCoin = StableCoin(Model(modelAddress).stableCoinAddresses(coinIndex));
 
-    uint decimalFactor = 10 ** uint(delaToken.decimals() - stableCoin.decimals());
+    //uint decimalFactor = 10 ** uint(delaToken.decimals() - stableCoin.decimals());
+    uint decimalFactor = Model(modelAddress).stableCoinDecimalDifferencesPowered(coinIndex);
     uint dealTotalAmountInXwei = dealTotalAmountInWei.div(decimalFactor);
 
     // pay the seller
@@ -98,17 +99,17 @@ contract OrderSettlementController {
     
     // release fund to the seller
     uint netInXwei = dealTotalAmountInXwei.sub((dealTotalAmountInXwei.mul(rate)).div(100));
-    OrderEscrow(Model(modelAddress).orderEscrowAddress()).transferStabeCoin(sellerAddress, netInXwei);
+    OrderEscrow(Model(modelAddress).orderEscrowAddress()).transferStabeCoin(sellerAddress, netInXwei, coinIndex);
     
     // pool proportation
     uint tokenPoolAmountInXwei = dealTotalAmountInXwei.sub(netInXwei);
 
     // remaining to dividend pool
-    OrderEscrow(Model(modelAddress).orderEscrowAddress()).transferStabeCoin(Model(modelAddress).dividendPoolAddress(), tokenPoolAmountInXwei);
+    OrderEscrow(Model(modelAddress).orderEscrowAddress()).transferStabeCoin(Model(modelAddress).dividendPoolAddress(), tokenPoolAmountInXwei, coinIndex);
 
     // --------------------- rewarding DELA ---------------------    
     uint rewardAmountInWei = tokenPoolAmountInXwei.mul(decimalFactor);
-    uint balanceLeftInWei = delaToken.balanceOf(Model(modelAddress).tokenEscrowAddress());
+    uint balanceLeftInWei = delaToken.balanceOf(Model(modelAddress).tokenEscrowAddresses(coinIndex));
     if(balanceLeftInWei > 0)
     {
       if(tokenPoolAmountInXwei.mul(decimalFactor) > balanceLeftInWei)
@@ -123,24 +124,24 @@ contract OrderSettlementController {
     if(refereeAddress != address(0))
     {
       refereeAmountInWei = rewardAmountInWei.div(2);
-      TokenEscrow(Model(modelAddress).tokenEscrowAddress()).rewardToken(refereeAddress, refereeAmountInWei);
+      TokenEscrow(Model(modelAddress).tokenEscrowAddresses(coinIndex)).rewardToken(refereeAddress, refereeAmountInWei);
     }
 
     // reward seller with DELA
-    TokenEscrow(Model(modelAddress).tokenEscrowAddress()).rewardToken(sellerAddress, rewardAmountInWei.sub(refereeAmountInWei));
+    TokenEscrow(Model(modelAddress).tokenEscrowAddresses(coinIndex)).rewardToken(sellerAddress, rewardAmountInWei.sub(refereeAmountInWei));
     // --------------------------------------------------------------- //
   }
   
   // setup a deal, called by buyer only
-  function setupDeal(address seller, uint igi, string calldata buyerNote, uint quantity, address referee, address moderator, uint totalUSDInWei) external
+  function setupDeal(address seller, uint igi, string calldata buyerNote, uint quantity, address referee, address moderator, uint totalUSDInWei, uint coinIndex) external
   {
     ProductController productController = ProductController(Model(modelAddress).productControllerAddress());
 
     require(MarketplaceController(Model(modelAddress).marketplaceControllerAddress()).isSellerBanned(seller) != true && !productController.isItemBanned(igi - 1), 'Seller or item is banned.');
     
-    StableCoin stableCoin = StableCoin(Model(modelAddress).stableCoinAddress());
+    StableCoin stableCoin = StableCoin(Model(modelAddress).stableCoinAddresses(coinIndex));
 
-    require(totalUSDInWei <= stableCoin.balanceOf(msg.sender).mul(Model(modelAddress).staleCoinDecimalDifferencePowered()), 'Not enough balance for paying.');
+    require(totalUSDInWei <= stableCoin.balanceOf(msg.sender).mul(Model(modelAddress).stableCoinDecimalDifferencesPowered(coinIndex)), 'Not enough balance for paying.');
     
     SharedStructs.Deal memory deal;
     deal.roles[0] = tx.origin;
@@ -166,7 +167,7 @@ contract OrderSettlementController {
     ProductController(Model(modelAddress).productControllerAddress()).minusProductQuantity(igi, quantity);
     EventModel(Model(modelAddress).eventModelAddress()).onDealCreatedEmit(dealIndex, seller, tx.origin, buyerNote);   
 
-    stableCoin.transferFrom(msg.sender, Model(modelAddress).orderEscrowAddress(), totalUSDInWei.div(Model(modelAddress).staleCoinDecimalDifferencePowered()));
+    stableCoin.transferFrom(msg.sender, Model(modelAddress).orderEscrowAddress(), totalUSDInWei.div(Model(modelAddress).stableCoinDecimalDifferencesPowered(coinIndex)));
   }
 
   /*
@@ -213,22 +214,22 @@ contract OrderSettlementController {
   }
 
   // setup a direct deal (without deal dispute option), called by buyer
-  function setupDirectDeal(address seller, uint igi, string calldata buyerNote, uint quantity, uint totalUSDInWei) external
+  function setupDirectDeal(address seller, uint igi, string calldata buyerNote, uint quantity, uint totalUSDInWei, uint coinIndex) external
   {
     ProductController productController = ProductController(Model(modelAddress).productControllerAddress());
 
     require(MarketplaceController(Model(modelAddress).marketplaceControllerAddress()).isSellerBanned(seller) && !productController.isItemBanned(igi - 1), 'Seller or item is banned.');
 
-    StableCoin stableCoin = StableCoin(Model(modelAddress).stableCoinAddress());
-    Token delaToken = Token(Model(modelAddress).tokenAddress());
+    StableCoin stableCoin = StableCoin(Model(modelAddress).stableCoinAddresses(coinIndex));
+    Token delaToken = Token(Model(modelAddress).tokenAddresses(coinIndex));
 
-    uint decimalFactor = 10 ** uint(delaToken.decimals() - stableCoin.decimals());
+    //uint decimalFactor = 10 ** uint(delaToken.decimals() - stableCoin.decimals());
+    uint decimalFactor = Model(modelAddress).staleCoinDecimalDifferencesPowered(coinIndex);
     require(totalUSDInWei <= stableCoin.balanceOf(msg.sender).mul(decimalFactor), 'Not enough balance for paying.');
 
     addDirectDeal(seller, igi, buyerNote, quantity, totalUSDInWei);
 
     stableCoin.transferFrom(msg.sender, Model(modelAddress).orderEscrowAddress(), totalUSDInWei.div(decimalFactor));
-
   }
 
   // an internal function to add a deal to order model

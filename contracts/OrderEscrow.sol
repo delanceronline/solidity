@@ -34,15 +34,15 @@ contract OrderEscrow {
   }
 
   // transfer pegged tokens to somewhere, including to the dividend pool
-  function transferStabeCoin(address receiver, uint amountInXwei) external orderControllerOnly
+  function transferStabeCoin(address receiver, uint amountInXwei, uint coinIndex) external orderControllerOnly
   {
     // if receiver is the dividend pool, update stable coin inflow to the dividend pool.
     if(receiver == Model(modelAddress).dividendPoolAddress())
     {
-      Token(Model(modelAddress).tokenAddress()).updatePoolInflow(amountInXwei.mul(Model(modelAddress).staleCoinDecimalDifferencePowered()));
+      Token(Model(modelAddress).tokenAddresses(coinIndex)).updatePoolInflow(amountInXwei.mul(Model(modelAddress).stableCoinDecimalDifferencesPowered(coinIndex)));
     }
 
-    StableCoin(Model(modelAddress).stableCoinAddress()).transfer(receiver, amountInXwei);
+    StableCoin(Model(modelAddress).stableCoinAddresses(coinIndex)).transfer(receiver, amountInXwei);
   }
   
 }

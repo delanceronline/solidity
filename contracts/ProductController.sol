@@ -5,10 +5,7 @@ import "./math/SafeMath.sol";
 import './Model.sol';
 import './ProductModel.sol';
 import './OrderModel.sol';
-import './StableCoin.sol';
 import './Token.sol';
-import './TokenEscrow.sol';
-import './OrderEscrow.sol';
 import './SharedStructs.sol';
 
 /*

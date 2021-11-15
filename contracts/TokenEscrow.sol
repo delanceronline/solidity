@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import './math/SafeMath.sol';
 import './Token.sol';
 import './Model.sol';
-import './StableCoin.sol';
 
 contract TokenEscrow {
   
@@ -82,7 +81,7 @@ contract TokenEscrow {
           actualAmount = balanceLeft;
 
         delaToken.transfer(receiver, actualAmount);
-        delaToken.adjustCirculationTotal(actualAmount);
+        delaToken.adjustCirculationTotal(actualAmount, 0);
       }
 
       rewardCalledTurnover = rewardCalledTurnover.add(amount);
@@ -94,7 +93,7 @@ contract TokenEscrow {
     if(teamBalance > 0)
     {
       delaToken.transfer(msg.sender, teamBalance);
-      delaToken.adjustCirculationTotal(teamBalance);
+      delaToken.adjustCirculationTotal(teamBalance, 0);
 
       teamBalance = 0;
     }

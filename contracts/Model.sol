@@ -30,11 +30,11 @@ contract Model {
   address public orderSettlementControllerAddress;
 
   address public orderEscrowAddress;
-
-  address public stableCoinAddress;
-  address public tokenAddress;
-  address public tokenEscrowAddress;
   address public dividendPoolAddress;
+
+  address[] public stableCoinAddresses;
+  address[] public tokenAddresses;
+  address[] public tokenEscrowAddresses;
 
   address public eventModelAddress;
   address public productModelAddress;
@@ -92,8 +92,8 @@ contract Model {
   mapping(address => address[]) public favourUsers;
   mapping(address => uint[]) public favourItems;
 
-  uint public staleCoinDecimalDifference;
-  uint public staleCoinDecimalDifferencePowered;
+  uint[] public stableCoinDecimalDifferences;
+  uint[] public stableCoinDecimalDifferencesPowered;
 
   string public marketPGPPublicKey;
 
@@ -199,28 +199,38 @@ contract Model {
     orderEscrowAddress = addr;
   }
 
-  // set public pegged stable coin (USD) contract address, once only
-  function setStableCoinAddress(address addr) marketPlaceControllerOnly external
+  // add public pegged stable coin contract address
+  function addStableCoinAddress(address addr) marketPlaceControllerOnly external
   {
-    require(stableCoinAddress == address(0), "stable coin already set");
-    stableCoinAddress = addr;
+    //require(stableCoinAddress == address(0), "stable coin already set");
+    //stableCoinAddress = addr;
 
-    staleCoinDecimalDifference = 18 - StableCoin(stableCoinAddress).decimals();
-    staleCoinDecimalDifferencePowered = 10 ** staleCoinDecimalDifference;
+    require(addr != address(0), 'addr is invalid');
+    stableCoinAddresses.push(addr);
+
+    uint stableCoinDecimalDifference = 18 - StableCoin(addr).decimals();
+    stableCoinDecimalDifferences.push(stableCoinDecimalDifference);
+    stableCoinDecimalDifferencesPowered.push(10 ** stableCoinDecimalDifference);
   }
 
-  // set DELA token contract address, once only
-  function setTokenAddress(address addr) marketPlaceControllerOnly external
+  // add DELA token contract address
+  function addTokenAddress(address addr) marketPlaceControllerOnly external
   {
-    require(tokenAddress == address(0), "token already set");
-    tokenAddress = addr;
+    //require(tokenAddress == address(0), "token already set");
+    //tokenAddress = addr;
+
+    require(addr != address(0), 'addr is invalid');
+    tokenAddresses.push(addr);
   }
 
-  // set token escrow contract address, once only
-  function setTokenEscrowAddress(address addr) marketPlaceControllerOnly external
+  // add token escrow contract address
+  function addTokenEscrowAddress(address addr) marketPlaceControllerOnly external
   {
-    require(tokenEscrowAddress == address(0), "token escrow already set");
-    tokenEscrowAddress = addr;
+    //require(tokenEscrowAddress == address(0), "token escrow already set");
+    //tokenEscrowAddress = addr;
+
+    require(addr != address(0), 'addr is invalid');
+    tokenEscrowAddresses.push(addr);
   }
 
   // set dividend pool contract address, once only
@@ -817,7 +827,6 @@ contract Model {
     require(localIndex < refereeDeals[referee].length);
 
     refereeDeals[referee][localIndex] = refereeDeals[referee][refereeDeals[referee].length - 1];
-    //refereeDeals[referee].length--;
     refereeDeals[referee].pop();
   }
 }

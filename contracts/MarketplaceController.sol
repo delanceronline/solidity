@@ -106,22 +106,22 @@ contract MarketplaceController {
     Model(modelAddress).setOrderEscrowAddress(addr);
   }
 
-  // set public and existing pegged coin class contract address
-  function setStableCoinAddress(address addr) adminOnly external
+  // add public and existing pegged coin class contract address
+  function addStableCoinAddress(address addr) adminOnly external
   {
-    Model(modelAddress).setStableCoinAddress(addr);
+    Model(modelAddress).addStableCoinAddress(addr);
   }
 
-  // set DELA token class contract address
-  function setTokenAddress(address addr) adminOnly external
+  // add DELA token class contract address
+  function addTokenAddress(address addr) adminOnly external
   {
-    Model(modelAddress).setTokenAddress(addr);
+    Model(modelAddress).addTokenAddress(addr);
   }
 
-  // set DELA token escrow class contract address
-  function setTokenEscrowAddress(address addr) adminOnly external
+  // add DELA token escrow class contract address
+  function addTokenEscrowAddress(address addr) adminOnly external
   {
-    Model(modelAddress).setTokenEscrowAddress(addr);
+    Model(modelAddress).addTokenEscrowAddress(addr);
   }
 
   // set dividend pool class contract address

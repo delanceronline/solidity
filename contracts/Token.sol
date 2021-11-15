@@ -62,7 +62,7 @@ contract Token is Context, IERC20, IERC20Metadata {
 
     modifier tokenEscrowOnly()
     {
-      if(msg.sender == Model(modelAddress).tokenEscrowAddress()) _;
+      if(msg.sender == Model(modelAddress).tokenEscrowAddresses(0)) _;
     }
 
     modifier orderEscrowOnly()
@@ -95,13 +95,13 @@ contract Token is Context, IERC20, IERC20Metadata {
       modelAddress = addr;
     }
 
-    function withdrawDividend(address account) external dividendPoolOnly returns (uint amountWithdrawn)
+    function withdrawDividend(address account, uint coinIndex) external dividendPoolOnly returns (uint amountWithdrawn)
     {
       
-      if(account != Model(modelAddress).tokenEscrowAddress())
+      if(account != Model(modelAddress).tokenEscrowAddresses(coinIndex))
       {
         update(account);
-        uint amount = (scaledDividendBalanceOf[account].div(scaling)).div(Model(modelAddress).staleCoinDecimalDifferencePowered());
+        uint amount = (scaledDividendBalanceOf[account].div(scaling)).div(Model(modelAddress).stableCoinDecimalDifferencesPowered(coinIndex));
         scaledDividendBalanceOf[account] = scaledDividendBalanceOf[account].mod(scaling);  // retain the remainder
 
         return amount;
@@ -110,7 +110,7 @@ contract Token is Context, IERC20, IERC20Metadata {
       return 0;
     }
 
-    function adjustCirculationTotal(uint amount) external tokenEscrowOnly{
+    function adjustCirculationTotal(uint amount, uint coinIndex) external tokenEscrowOnly{
 
       require(amount > 0);
 
@@ -122,7 +122,7 @@ contract Token is Context, IERC20, IERC20Metadata {
       {
         circulationTotal = amount;
 
-        uint dividendPoolBalance = (StableCoin(Model(modelAddress).stableCoinAddress()).balanceOf(Model(modelAddress).dividendPoolAddress())).mul(Model(modelAddress).staleCoinDecimalDifferencePowered());
+        uint dividendPoolBalance = (StableCoin(Model(modelAddress).stableCoinAddresses(coinIndex)).balanceOf(Model(modelAddress).dividendPoolAddress())).mul(Model(modelAddress).stableCoinDecimalDifferencesPowered(coinIndex));
         if(dividendPoolBalance > 0)
         {
           uint256 available = (dividendPoolBalance.mul(scaling)).add(scaledRemainder);
@@ -137,10 +137,10 @@ contract Token is Context, IERC20, IERC20Metadata {
     {
       uint amount = 0;
 
-      if(owner != Model(modelAddress).tokenEscrowAddress())
+      if(owner != Model(modelAddress).tokenEscrowAddresses(0))
       {
         uint256 owed = scaledDividendPerToken.sub(scaledDividendCreditedTo[owner]);
-        amount = ((scaledDividendBalanceOf[owner].add(_balances[owner].mul(owed))).div(scaling)).div(Model(modelAddress).staleCoinDecimalDifferencePowered());
+        amount = ((scaledDividendBalanceOf[owner].add(_balances[owner].mul(owed))).div(scaling)).div(Model(modelAddress).stableCoinDecimalDifferencesPowered(0));
       }
 
       return amount;
@@ -349,7 +349,7 @@ contract Token is Context, IERC20, IERC20Metadata {
         */
 
 
-        address tokenEscrowAddress = Model(modelAddress).tokenEscrowAddress();
+        address tokenEscrowAddress = Model(modelAddress).tokenEscrowAddresses(0);
 
         if(recipient != tokenEscrowAddress)
         {
