@@ -36,7 +36,7 @@ contract OrderManagementController {
   }
 
   // called by moderator only and set the dispute case result of a deal
-  function resolveDispute(uint globalDealIndex, bool shouldRefund, uint coinIndex) external moderatorOnly
+  function resolveDispute(uint globalDealIndex, bool shouldRefund) external moderatorOnly
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
@@ -53,6 +53,7 @@ contract OrderManagementController {
       orderModel.setDealNumericalData(globalDealIndex, 7, totalAmount.sub(handlingFee));        
       
       // send handling fee to moderator
+      uint coinIndex = orderModel.getDealNumericalData(globalDealIndex, 11);
       OrderEscrow(Model(modelAddress).orderEscrowAddress()).transferStabeCoin(msg.sender, handlingFee.div(Model(modelAddress).stableCoinDecimalDifferencesPowered(coinIndex)), coinIndex);
     }
 
@@ -61,14 +62,14 @@ contract OrderManagementController {
   }
 
   // seller ships the deal
-  function setDealShipped(uint localDealIndex, string calldata shippingNote, uint coinIndex) external
+  function setDealShipped(uint localDealIndex, string calldata shippingNote) external
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
     // localDealIndex < dealOwners[msg.sender].length --- deal count is out of bound.
     require(localDealIndex < orderModel.getTotalDealCount());
 
-    uint dealIndex = orderModel.getDealIndex(tx.origin, localDealIndex);
+    uint dealIndex = orderModel.getDealIndex(msg.sender, localDealIndex);
     require(!orderModel.getDealFlag(dealIndex, 1));
 
     // !deal.flags[1] && !deal.flags[3] --- Not shipped AND not cancelled
@@ -89,7 +90,7 @@ contract OrderManagementController {
 
       ProductController(Model(modelAddress).productControllerAddress()).addItemDealCountByOne(orderModel.getDealNumericalData(dealIndex, 5));
 
-      //tx.origin.transfer(deal.numericalData[7]);
+      uint coinIndex = orderModel.getDealNumericalData(dealIndex, 11);
       OrderEscrow(Model(modelAddress).orderEscrowAddress()).transferStabeCoin(msg.sender, orderModel.getDealNumericalData(dealIndex, 7).div(Model(modelAddress).stableCoinDecimalDifferencesPowered(coinIndex)), coinIndex);
     }
   }
@@ -114,7 +115,7 @@ contract OrderManagementController {
   }
 
   // seller rejects a deal
-  function rejectDeal(uint localDealIndex, uint coinIndex) external
+  function rejectDeal(uint localDealIndex) external
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
@@ -145,6 +146,7 @@ contract OrderManagementController {
       orderModel.setDealFlag(dealIndex, 3, true);
       orderModel.setDealFlag(dealIndex, 4, false);
 
+      uint coinIndex = orderModel.getDealNumericalData(dealIndex, 11);
       OrderEscrow(Model(modelAddress).orderEscrowAddress()).transferStabeCoin(orderModel.getDealRole(dealIndex, 0), orderModel.getDealNumericalData(dealIndex, 7).div(Model(modelAddress).stableCoinDecimalDifferencesPowered(coinIndex)), coinIndex);
     }
   }
@@ -201,7 +203,7 @@ contract OrderManagementController {
   }
 
   // buyer cancels a deal request
-  function cancelDeal(uint localDealIndex, uint coinIndex) external
+  function cancelDeal(uint localDealIndex) external
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
@@ -219,6 +221,8 @@ contract OrderManagementController {
     require(!orderModel.getDealFlag(dealIndex, 3) && !orderModel.getDealFlag(dealIndex, 2) && msg.sender == orderModel.getDealRole(dealIndex, 0) && (!orderModel.getDealFlag(dealIndex, 4) || (orderModel.getDealFlag(dealIndex, 4) && !orderModel.getDealFlag(dealIndex, 1) && (block.number - orderModel.getDealNumericalData(dealIndex, 2) > orderModel.getDealNumericalData(dealIndex, 9))) || (orderModel.getDealFlag(dealIndex, 5) && (orderModel.getDealFlag(dealIndex, 6) && orderModel.getDealFlag(dealIndex, 7)))));
 
     orderModel.setDealFlag(dealIndex, 3, true);
+
+    uint coinIndex = orderModel.getDealNumericalData(dealIndex, 11);
     OrderEscrow(Model(modelAddress).orderEscrowAddress()).transferStabeCoin(msg.sender, orderModel.getDealNumericalData(dealIndex, 7).div(Model(modelAddress).stableCoinDecimalDifferencesPowered(coinIndex)), coinIndex);
 
     ProductController(Model(modelAddress).productControllerAddress()).plusProductQuantity(orderModel.getDealNumericalData(dealIndex, 5), orderModel.getDealNumericalData(dealIndex, 6));

@@ -63,4 +63,10 @@ contract ExtendedProductController {
     model.enableTag(lowerCaseHash, igi, isEnabled);
     EventModel(Model(modelAddress).eventModelAddress()).onSetItemTagEmit(igi, lowerCaseHash, '', '', isEnabled);
   }
+
+  // set if an item is banned
+  function setItemBanned(uint igi, bool isBanned) adminOnly external
+  {
+    ProductModel(Model(modelAddress).productModelAddress()).setItemIsBanned(igi, isBanned);    
+  }
 }

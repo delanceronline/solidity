@@ -31,7 +31,7 @@ contract OrderSettlementController {
   }
 
   // called by seller only, to finalize a shipped deal after dispute period expired
-  function finalizeDealWithoutDispute(uint localDealIndex, uint coinIndex) external
+  function finalizeDealWithoutDispute(uint localDealIndex) external
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
@@ -51,11 +51,12 @@ contract OrderSettlementController {
     // increase completed deal count by 1
     ProductController(Model(modelAddress).productControllerAddress()).addItemDealCountByOne(orderModel.getDealNumericalData(dealIndex, 5));
 
+    uint coinIndex = orderModel.getDealNumericalData(dealIndex, 11);
     releaseFunds(orderModel.getDealRole(dealIndex, 1), orderModel.getDealRole(dealIndex, 2), orderModel.getDealNumericalData(dealIndex, 8), orderModel.getDealNumericalData(dealIndex, 7), coinIndex);
   }
 
   // called by buyer only, to finalize a shipped deal
-  function finalizeDeal(uint localDealIndex, uint8 rating, bytes calldata review, uint coinIndex) external
+  function finalizeDeal(uint localDealIndex, uint8 rating, bytes calldata review) external
   {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
@@ -79,6 +80,7 @@ contract OrderSettlementController {
     ProductController(Model(modelAddress).productControllerAddress()).addItemDealCountByOne(orderModel.getDealNumericalData(dealIndex, 5));
     ProductController(Model(modelAddress).productControllerAddress()).addItemRatingScore(orderModel.getDealNumericalData(dealIndex, 5), rating);
 
+    uint coinIndex = orderModel.getDealNumericalData(dealIndex, 11);
     releaseFunds(orderModel.getDealRole(dealIndex, 1), orderModel.getDealRole(dealIndex, 2), orderModel.getDealNumericalData(dealIndex, 8), orderModel.getDealNumericalData(dealIndex, 7), coinIndex);
   }
 
@@ -156,7 +158,8 @@ contract OrderSettlementController {
     deal.numericalData[7] = totalUSDInWei;
     deal.numericalData[8] = MarketplaceController(Model(modelAddress).marketplaceControllerAddress()).calculateMarketCommission(totalUSDInWei);
     deal.numericalData[9] = ProductController(Model(modelAddress).productControllerAddress()).getShippingPeriodOfItem(igi);
-    deal.numericalData[10] = MarketplaceController(Model(modelAddress).marketplaceControllerAddress()).calculateModeratorHandlingFeeRate(totalUSDInWei);    
+    deal.numericalData[10] = MarketplaceController(Model(modelAddress).marketplaceControllerAddress()).calculateModeratorHandlingFeeRate(totalUSDInWei);
+    deal.numericalData[11] = coinIndex;
     deal.flags[0] = true;
     deal.buyerNote = buyerNote;
     uint dealIndex = OrderModel(Model(modelAddress).orderModelAddress()).addDeal(deal);

@@ -12,7 +12,6 @@ library SharedStructs {
     //3: moderator
     address[4] roles;
 
-    
     //0: activationTime
     //1: shippedTime
     //2: acceptionTime
@@ -24,8 +23,8 @@ library SharedStructs {
     //8: market commission percent
     //9: shippingPeriod in blocks
     //10: moderator handling fee percent
-    uint[11] numericalData;
-
+    //11: stable coin index
+    uint[12] numericalData;
 
     //0: isExtendingDealAllowed
     //1: isShipped
@@ -44,7 +43,7 @@ library SharedStructs {
     string buyerNote;
 
     // delivery note from seller
-    string shippingNote;    
+    string shippingNote;
   }
 
   // deal dispute structure
@@ -82,7 +81,7 @@ library SharedStructs {
   struct Item
   {
     uint8 category;                             // category index
-    uint priceUSD;                              // listed price in pegged USD
+    uint price;                                 // listed price with USD
     bool isActive;                              // active flag
     bytes title;                                // title of the item
     uint dealCount;                             // number of deals made

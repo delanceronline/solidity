@@ -234,11 +234,11 @@ contract ProductModel {
   }
 
   // get the listed price in pegged USD of an item
-  function getItemPriceUSD(uint globalItemIndex) external view returns (uint)
+  function getItemPrice(uint globalItemIndex) external view returns (uint)
   {
     require(globalItemIndex < listedItems.length);
 
-    return listedItems[globalItemIndex].priceUSD;
+    return listedItems[globalItemIndex].price;
   }
 
   // check if an item is active
@@ -364,11 +364,11 @@ contract ProductModel {
   }
 
   // add a new item to the list in product model
-  function addItem(uint8 category, uint priceUSD, bytes calldata title, uint quantityLeft, bool isQuantityLimited, uint noDisputePeriod, uint shippingPeriod, uint validBlockCount) external controllerOnly
+  function addItem(uint8 category, uint price, bytes calldata title, uint quantityLeft, bool isQuantityLimited, uint noDisputePeriod, uint shippingPeriod, uint validBlockCount) external controllerOnly
   {    
     SharedStructs.Item memory item;
     item.category = category;
-    item.priceUSD = priceUSD;
+    item.price = price;
     item.isActive = true;
     item.title = title;
     item.dealCount = 0;
@@ -392,12 +392,12 @@ contract ProductModel {
     listedItems[globalItemIndex].category = category;
   }
 
-  // set the listed price of an item in pegged USD
-  function setItemPriceUSD(uint globalItemIndex, uint priceUSD) external controllerOnly
+  // set the listed price of an item with pegged stable coin
+  function setItemPrice(uint globalItemIndex, uint price) external controllerOnly
   {
     require(globalItemIndex < listedItems.length);
 
-    listedItems[globalItemIndex].priceUSD = priceUSD;
+    listedItems[globalItemIndex].price = price;
   }
 
   // set the active flag of an item
@@ -556,7 +556,7 @@ contract ProductModel {
     require(localItemIndex < itemOwners[vendor].length);
 
     uint ii = itemOwners[vendor][localItemIndex].sub(1);
-    return (listedItems[ii].category, listedItems[ii].priceUSD, listedItems[ii].isActive, listedItems[ii].title, listedItems[ii].dealCount, listedItems[ii].ratingScore, listedItems[ii].quantityLeft, listedItems[ii].isQuantityLimited, ii + 1);
+    return (listedItems[ii].category, listedItems[ii].price, listedItems[ii].isActive, listedItems[ii].title, listedItems[ii].dealCount, listedItems[ii].ratingScore, listedItems[ii].quantityLeft, listedItems[ii].isQuantityLimited, ii + 1);
   }
 
   // get an item by given a global item index
@@ -565,7 +565,7 @@ contract ProductModel {
     SharedStructs.Item storage item = listedItems[igi];
     require(item.category != 0);
     
-    return (item.category, item.priceUSD, item.isActive, item.title, item.dealCount, item.ratingScore, item.quantityLeft, item.isQuantityLimited, item.creationBlockNumber, item.validBlockCount);
+    return (item.category, item.price, item.isActive, item.title, item.dealCount, item.ratingScore, item.quantityLeft, item.isQuantityLimited, item.creationBlockNumber, item.validBlockCount);
   }
 
   // increase the quantity left of an item

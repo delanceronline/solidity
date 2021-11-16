@@ -26,7 +26,7 @@ contract DividendPool {
   // function for claiming dividend called by DELA holders  
   function claimDividend(uint coinIndex) public {
 
-    uint amount = Token(Model(modelAddress).tokenAddresses(coinIndex)).withdrawDividend(msg.sender, coinIndex);
+    uint amount = Token(Model(modelAddress).tokenAddresses(coinIndex)).withdrawDividend(msg.sender);
 
     require(amount <= StableCoin(Model(modelAddress).stableCoinAddresses(coinIndex)).balanceOf(address(this)), "dividend withdrawal amount must be smaller than total pool amount");
 

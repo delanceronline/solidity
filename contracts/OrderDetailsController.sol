@@ -380,8 +380,8 @@ contract OrderDetailsController {
     OrderModel orderModel = OrderModel(Model(modelAddress).orderModelAddress());
 
     // localIndex < dealOwners[msg.sender].length --- deal count is out of bound.
-    // flagIndex < 11 --- flag index is out of bound.
-    require(localIndex < orderModel.getDealCount(msg.sender) && flagIndex < 11);
+    // flagIndex < 12 --- flag index is out of bound.
+    require(localIndex < orderModel.getDealCount(msg.sender) && flagIndex < 12);
 
     uint dealIndex = orderModel.getDealIndex(msg.sender, localIndex);
     return orderModel.getDealFlag(dealIndex, flagIndex);

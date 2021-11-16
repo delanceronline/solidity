@@ -59,6 +59,7 @@ contract Token is Context, IERC20, IERC20Metadata {
     mapping(address => uint256) public scaledDividendCreditedTo;
     uint256 public scaledRemainder = 0;
     uint256 public circulationTotal = 0;
+    uint public stableCoinIndex;
 
     modifier tokenEscrowOnly()
     {
@@ -85,23 +86,24 @@ contract Token is Context, IERC20, IERC20Metadata {
      * All two of these values are immutable: they can only be set once during
      * construction.
      */
-    constructor(address addr) {
+    constructor(address addr, uint coinIndex) {
 
-      _name = "DELANCER";
+      _name = "DELANCER-USDC";
       _symbol = "DELA";
       _totalSupply = 10000 * (uint256(10) ** 18);      
       _balances[msg.sender] = _totalSupply;
 
       modelAddress = addr;
+      stableCoinIndex = coinIndex;
     }
 
-    function withdrawDividend(address account, uint coinIndex) external dividendPoolOnly returns (uint amountWithdrawn)
+    function withdrawDividend(address account) external dividendPoolOnly returns (uint amountWithdrawn)
     {
       
-      if(account != Model(modelAddress).tokenEscrowAddresses(coinIndex))
+      if(account != Model(modelAddress).tokenEscrowAddresses(stableCoinIndex))
       {
         update(account);
-        uint amount = (scaledDividendBalanceOf[account].div(scaling)).div(Model(modelAddress).stableCoinDecimalDifferencesPowered(coinIndex));
+        uint amount = (scaledDividendBalanceOf[account].div(scaling)).div(Model(modelAddress).stableCoinDecimalDifferencesPowered(stableCoinIndex));
         scaledDividendBalanceOf[account] = scaledDividendBalanceOf[account].mod(scaling);  // retain the remainder
 
         return amount;
@@ -110,7 +112,7 @@ contract Token is Context, IERC20, IERC20Metadata {
       return 0;
     }
 
-    function adjustCirculationTotal(uint amount, uint coinIndex) external tokenEscrowOnly{
+    function adjustCirculationTotal(uint amount) external tokenEscrowOnly{
 
       require(amount > 0);
 
@@ -122,7 +124,7 @@ contract Token is Context, IERC20, IERC20Metadata {
       {
         circulationTotal = amount;
 
-        uint dividendPoolBalance = (StableCoin(Model(modelAddress).stableCoinAddresses(coinIndex)).balanceOf(Model(modelAddress).dividendPoolAddress())).mul(Model(modelAddress).stableCoinDecimalDifferencesPowered(coinIndex));
+        uint dividendPoolBalance = (StableCoin(Model(modelAddress).stableCoinAddresses(stableCoinIndex)).balanceOf(Model(modelAddress).dividendPoolAddress())).mul(Model(modelAddress).stableCoinDecimalDifferencesPowered(stableCoinIndex));
         if(dividendPoolBalance > 0)
         {
           uint256 available = (dividendPoolBalance.mul(scaling)).add(scaledRemainder);

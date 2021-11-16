@@ -20,6 +20,7 @@ contract TokenEscrow {
   uint public teamClaimCountMax;
 
   uint internal rewardCalledTurnover;
+  uint public stableCoinIndex;
 
   modifier controllerOnly() {
 
@@ -35,10 +36,12 @@ contract TokenEscrow {
 
   }
 
-  constructor(address addr)
+  constructor(address addr, uint coinIndex)
   {
     modelAddress = addr;
-    delaToken = new Token(addr);
+    stableCoinIndex = coinIndex;
+
+    delaToken = new Token(addr, coinIndex);
 
     teamClaimCountMax = teamClaimMax.div(teamClaimUnit);
   }
@@ -81,7 +84,7 @@ contract TokenEscrow {
           actualAmount = balanceLeft;
 
         delaToken.transfer(receiver, actualAmount);
-        delaToken.adjustCirculationTotal(actualAmount, 0);
+        delaToken.adjustCirculationTotal(actualAmount);
       }
 
       rewardCalledTurnover = rewardCalledTurnover.add(amount);
@@ -93,7 +96,7 @@ contract TokenEscrow {
     if(teamBalance > 0)
     {
       delaToken.transfer(msg.sender, teamBalance);
-      delaToken.adjustCirculationTotal(teamBalance, 0);
+      delaToken.adjustCirculationTotal(teamBalance);
 
       teamBalance = 0;
     }

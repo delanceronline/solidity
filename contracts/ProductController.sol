@@ -4,8 +4,6 @@ pragma solidity ^0.8.0;
 import "./math/SafeMath.sol";
 import './Model.sol';
 import './ProductModel.sol';
-import './OrderModel.sol';
-import './Token.sol';
 import './SharedStructs.sol';
 
 /*
@@ -199,9 +197,9 @@ contract ProductController {
   }
 
   // get the listed price in pegged USD of an item
-  function getItemPriceUSD(uint igi) view external returns (uint)
+  function getItemPrice(uint igi) view external returns (uint)
   {
-    return ProductModel(Model(modelAddress).productModelAddress()).getItemPriceUSD(igi);
+    return ProductModel(Model(modelAddress).productModelAddress()).getItemPrice(igi);
   } 
 
   // get the global item index of an item belonging to a vendor, with a local item index
@@ -272,13 +270,7 @@ contract ProductController {
     ProductModel model = ProductModel(Model(modelAddress).productModelAddress());
 
     model.setItemRatingScore(igi.sub(1), model.getItemRatingScore(igi.sub(1)).add(score));
-  }
-
-  // set if an item is banned
-  function setItemBanned(uint igi, bool isBanned) adminOnly external
-  {
-    ProductModel(Model(modelAddress).productModelAddress()).setItemIsBanned(igi, isBanned);    
-  }
+  }  
 
   // set the active flag of an item
   function setItemActive(uint localItemIndex, bool isActive) external returns(bool)
@@ -362,7 +354,7 @@ contract ProductController {
   }
 
   // set the listed price of an item in pegged token
-  function setItemPrice(uint localItemIndex, uint priceUSD) external
+  function setItemPrice(uint localItemIndex, uint price) external
   {
     ProductModel model = ProductModel(Model(modelAddress).productModelAddress());
 
@@ -374,7 +366,7 @@ contract ProductController {
     uint currentCategory = model.getItemCategory(igi.sub(1));
     if(currentCategory > 0)
     {
-      model.setItemPriceUSD(igi.sub(1), priceUSD);
+      model.setItemPrice(igi.sub(1), price);
     }
   }
 
@@ -417,11 +409,11 @@ contract ProductController {
   }
 
   // add an item
-  function addItem(uint8 category, uint priceUSD, bytes calldata title, bytes calldata details, uint quantityLeft, bool isQuantityLimited, uint noDisputePeriod, uint shippingPeriod, uint validBlockCount) external{
+  function addItem(uint8 category, uint price, bytes calldata title, bytes calldata details, uint quantityLeft, bool isQuantityLimited, uint noDisputePeriod, uint shippingPeriod, uint validBlockCount) external{
     
     ProductModel model = ProductModel(Model(modelAddress).productModelAddress());
 
-    model.addItem(category, priceUSD, title, quantityLeft, isQuantityLimited, noDisputePeriod, shippingPeriod, validBlockCount);
+    model.addItem(category, price, title, quantityLeft, isQuantityLimited, noDisputePeriod, shippingPeriod, validBlockCount);
 
     uint igi = model.getTotalItemCount();
     model.addItemIndex(msg.sender, igi);

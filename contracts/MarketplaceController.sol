@@ -261,17 +261,17 @@ contract MarketplaceController {
   }
 
   // get the rate of marketplace's commission upon different turnover tiers
-  function calculateMarketCommission(uint priceUSD) public view returns (uint)
+  function calculateMarketCommission(uint price) public view returns (uint)
   {
     Model model = Model(modelAddress);
     require(model.getMarketplaceCommissionRatesLength() == model.getMarketplaceCommissionBoundsLength());
 
     uint rate = model.getMarketplaceCommissionRate(model.getMarketplaceCommissionRatesLength() - 1);
-    if(priceUSD <= model.getMarketplaceCommissionBound(model.getMarketplaceCommissionBoundsLength() - 1))
+    if(price <= model.getMarketplaceCommissionBound(model.getMarketplaceCommissionBoundsLength() - 1))
     {
       for(uint i = 1; i < model.getMarketplaceCommissionBoundsLength(); i++)
       {
-        if(priceUSD >= model.getMarketplaceCommissionBound(i - 1) && priceUSD <= model.getMarketplaceCommissionBound(i))
+        if(price >= model.getMarketplaceCommissionBound(i - 1) && price <= model.getMarketplaceCommissionBound(i))
         {
           rate = model.getMarketplaceCommissionRate(i - 1);
           break;
@@ -283,17 +283,17 @@ contract MarketplaceController {
   }
 
   // get the rate of moderator's handling fee rate upon different turnover tiers
-  function calculateModeratorHandlingFeeRate(uint priceUSD) public view returns (uint)
+  function calculateModeratorHandlingFeeRate(uint price) public view returns (uint)
   {
     Model model = Model(modelAddress);
     require(model.getModeratorHandlingFeeRatesLength() == model.getModeratorHandlingFeeBoundsLength(), 'model.getModeratorHandlingFeeRatesLength() != model.getModeratorHandlingFeeBoundsLength()');
 
     uint rate = model.getModeratorHandlingFeeRate(model.getModeratorHandlingFeeRatesLength() - 1);
-    if(priceUSD <= model.getModeratorHandlingFeeBound(model.getModeratorHandlingFeeBoundsLength() - 1))
+    if(price <= model.getModeratorHandlingFeeBound(model.getModeratorHandlingFeeBoundsLength() - 1))
     {
       for(uint i = 1; i < model.getModeratorHandlingFeeBoundsLength(); i++)
       {
-        if(priceUSD >= model.getModeratorHandlingFeeBound(i - 1) && priceUSD <= model.getModeratorHandlingFeeBound(i))
+        if(price >= model.getModeratorHandlingFeeBound(i - 1) && price <= model.getModeratorHandlingFeeBound(i))
         {
           rate = model.getModeratorHandlingFeeRate(i - 1);
           break;

@@ -272,7 +272,7 @@ contract OrderModel {
   // get the numerical data value of a deal
   function getDealNumericalData(uint dealIndex, uint8 index) external view returns (uint)
   {
-    require(index >= 0 && index < 11);
+    require(index >= 0 && index < 12);
     require(dealIndex <  deals.length);
 
     return deals[dealIndex].numericalData[index];
@@ -281,7 +281,7 @@ contract OrderModel {
   // get the flag value of a deal
   function getDealFlag(uint dealIndex, uint8 index) external view returns (bool)
   {
-    require(index >= 0 && index < 11);
+    require(index >= 0 && index < 12);
     require(dealIndex <  deals.length);
 
     return deals[dealIndex].flags[index];
@@ -299,7 +299,7 @@ contract OrderModel {
   // set the numercial data value of a deal
   function setDealNumericalData(uint dealIndex, uint8 index, uint value) external controllerOnly
   {
-    require(index >= 0 && index < 11);
+    require(index >= 0 && index < 12);
     require(dealIndex <  deals.length);
 
     deals[dealIndex].numericalData[index] = value;
@@ -308,7 +308,7 @@ contract OrderModel {
   // set the flag value of a deal
   function setDealFlag(uint dealIndex, uint8 index, bool value) external controllerOnly
   {
-    require(index >= 0 && index < 11);
+    require(index >= 0 && index < 12);
     require(dealIndex <  deals.length);
 
     deals[dealIndex].flags[index] = value;
