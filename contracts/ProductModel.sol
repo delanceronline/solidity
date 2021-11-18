@@ -84,7 +84,7 @@ contract ProductModel {
     hashTags[lowerCaseHash].push(hashTag);
   }
 
-  function enableTag(bytes32 lowerCaseHash, uint igi, bool isEnabled) external controllerOnly
+  function enableHashTag(bytes32 lowerCaseHash, uint igi, bool isEnabled) external controllerOnly
   {
     SharedStructs.HashTag[] storage tags = hashTags[lowerCaseHash];
 
@@ -96,6 +96,11 @@ contract ProductModel {
         break;
       }
     }
+  }
+
+  function getHashTags(bytes32 lowerCaseHash) external view controllerOnly returns (SharedStructs.HashTag[] memory)
+  {
+    return hashTags[lowerCaseHash];
   }
 
   function addGlobalDiscount(address seller, address client, uint8 discountRate, bytes calldata additional) external controllerOnly
