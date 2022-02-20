@@ -34,7 +34,7 @@ contract ExtendedProductController {
   }
   
   // set a tag for an item
-  function setHashTag(uint localItemIndex, bytes32 lowerCaseHash, bytes32 originalHash, bytes calldata tag, bool isEnabled) external
+  function addHashTag(uint localItemIndex, bytes32 lowerCaseHash, bytes32 originalHash, bytes calldata tag, bool isEnabled) external
   {
     ProductModel model = ProductModel(Model(modelAddress).productModelAddress());
 
@@ -47,8 +47,8 @@ contract ExtendedProductController {
 
     model.addHashTag(lowerCaseHash, igi, tag, isEnabled);
     EventModel(Model(modelAddress).eventModelAddress()).onSetItemTagEmit(igi, lowerCaseHash, originalHash, tag, isEnabled);
-  }
-  
+  }  
+
   function enableHashTag(bytes32 lowerCaseHash, uint localItemIndex, bool isEnabled) external
   {
     ProductModel model = ProductModel(Model(modelAddress).productModelAddress());

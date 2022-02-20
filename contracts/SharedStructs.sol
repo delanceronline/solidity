@@ -131,6 +131,12 @@ library SharedStructs {
     bytes tag;
     uint blockNumber;
     bool isEnabled;
+    
+    // the pointer (non-zero based) hooks to the previous hashtag position index in the array, 0 implies the first one in the ordering chain
+    uint hookTo;
+
+    // the pointer (non-zero based) hooks to the hashtag with position index in the array which hooks to the current hashtag, 0 implies that it is the last one in the ordering chain
+    uint hookBy;
   }
 
   // private message struct
