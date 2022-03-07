@@ -39,6 +39,7 @@ contract Model {
   address public eventModelAddress;
   address public productModelAddress;
   address public orderModelAddress;
+  address public hashTagModelAddress;
     
   // reserved for future addons
   address[] public customizedControllers;
@@ -190,6 +191,12 @@ contract Model {
   {
     require(orderModelAddress == address(0), "order model already set");
     orderModelAddress = addr;
+  }
+
+  function setHashTagModelAddress(address addr) marketPlaceControllerOnly external
+  {
+    require(hashTagModelAddress == address(0), "hashtag model already set");
+    hashTagModelAddress = addr;
   }
 
   // set order escrow contract address, once only
