@@ -28,6 +28,7 @@ contract Model {
   address public orderDetailsControllerAddress;
   address public orderManagementControllerAddress;
   address public orderSettlementControllerAddress;
+  address public hashTagControllerAddress;
 
   address public orderEscrowAddress;
   address public dividendPoolAddress;
@@ -275,6 +276,12 @@ contract Model {
   function setOrderSettlementControllerAddress(address addr) marketPlaceControllerOnly external
   {
     orderSettlementControllerAddress = addr;
+  }
+
+  // update hash tag controller contract address
+  function setHashTagControllerAddress(address addr) marketPlaceControllerOnly external
+  {
+    hashTagControllerAddress = addr;
   }  
 
   // set marketplace contact
