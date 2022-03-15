@@ -10,7 +10,7 @@ import './SharedStructs.sol';
 /*
 ------------------------------------------------------------------------------------
 
-This is the controller class for the items / products which mainly gets access to the product model.
+This is a customized controller class for the hashtag management.
 
 ------------------------------------------------------------------------------------
 */
@@ -19,6 +19,7 @@ contract HashTagController {
   
   using SafeMath for uint256;
 
+  address public marketModelAddress;
   address public modelAddress;
 
   // administrator only modifier
@@ -29,17 +30,18 @@ contract HashTagController {
 
   }
 
-  constructor(address addr)
+  constructor(address marketModalAddr, address modalAddr)
   {
-    modelAddress = addr;
+    marketModelAddress = marketModalAddr;
+    modelAddress = modalAddr;
   }
   
   // set a tag for an item
   function addHashTag(uint localItemIndex, bytes32 lowerCaseHash, bytes32 originalHash, bytes calldata tag, bool isEnabled) external
   {
-    HashTagModel model = HashTagModel(Model(modelAddress).hashTagModelAddress());
+    HashTagModel model = HashTagModel(modelAddress);
 
-    ProductModel productModel = ProductModel(Model(modelAddress).productModelAddress());
+    ProductModel productModel = ProductModel(Model(marketModelAddress).productModelAddress());
     require(productModel.getItemCount(msg.sender) > 0, "You don't have any items.");
 
     uint igi = productModel.getItemGlobalIndex(msg.sender, localItemIndex);
@@ -48,14 +50,14 @@ contract HashTagController {
     require(productModel.getItemCategory(igi.sub(1)) != 0, 'Category id should be greater than zero.');
 
     model.addHashTag(lowerCaseHash, igi, tag, isEnabled);
-    EventModel(Model(modelAddress).eventModelAddress()).onSetItemTagEmit(igi, lowerCaseHash, originalHash, tag, isEnabled);
+    EventModel(Model(marketModelAddress).eventModelAddress()).onSetItemTagEmit(igi, lowerCaseHash, originalHash, tag, isEnabled);
   }  
 
   function enableHashTag(bytes32 lowerCaseHash, uint localItemIndex, bool isEnabled) external
   {
-    HashTagModel model = HashTagModel(Model(modelAddress).productModelAddress());
+    HashTagModel model = HashTagModel(modelAddress);
 
-    ProductModel productModel = ProductModel(Model(modelAddress).productModelAddress());
+    ProductModel productModel = ProductModel(Model(marketModelAddress).productModelAddress());
     require(productModel.getItemCount(msg.sender) > 0, "You can only edit your own item.");
 
     uint igi = productModel.getItemGlobalIndex(msg.sender, localItemIndex);
@@ -64,17 +66,22 @@ contract HashTagController {
     require(productModel.getItemCategory(igi.sub(1)) != 0, 'Category id should be greater than zero.');
 
     model.enableHashTag(lowerCaseHash, igi, isEnabled);
-    EventModel(Model(modelAddress).eventModelAddress()).onSetItemTagEmit(igi, lowerCaseHash, '', '', isEnabled);
+    EventModel(Model(marketModelAddress).eventModelAddress()).onSetItemTagEmit(igi, lowerCaseHash, '', '', isEnabled);
+  }
+
+  function modifyHashTagOrderingPosition(bytes32 lowerCaseHash, uint currentIndex, uint pointToIndex) external
+  {
+    HashTagModel(modelAddress).modifyHashTagOrderingPosition(lowerCaseHash, currentIndex, pointToIndex);
   }
 
   function getHashTags(bytes32 lowerCaseHash) external view returns (SharedStructs.HashTag[] memory)
   {
-    return HashTagModel(Model(modelAddress).hashTagModelAddress()).getHashTags(lowerCaseHash);
+    return HashTagModel(modelAddress).getHashTags(lowerCaseHash);
   }
 
   function getItemHashTags(uint igi) external view returns (bytes[] memory)
   {
-    return HashTagModel(Model(modelAddress).hashTagModelAddress()).getItemHashTags(igi);
+    return HashTagModel(modelAddress).getItemHashTags(igi);
   }
 
 }

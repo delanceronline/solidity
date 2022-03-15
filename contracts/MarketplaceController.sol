@@ -5,7 +5,6 @@ import "./math/SafeMath.sol";
 import './Model.sol';
 import './ProductModel.sol';
 import './OrderModel.sol';
-import './StableCoin.sol';
 import './Token.sol';
 import './TokenEscrow.sol';
 import './OrderEscrow.sol';
@@ -70,12 +69,6 @@ contract MarketplaceController {
     Model(modelAddress).setOrderModelAddress(addr);
   }
 
-  // set hashtag model class contract address
-  function setHashTagModelAddress(address addr) adminOnly external
-  {
-    Model(modelAddress).setHashTagModelAddress(addr); 
-  }
-
   // set marketplace controller address and this function is used for updating existing marketplace controller
   function setMarketplaceControllerAddress(address addr) adminOnly external
   {
@@ -105,11 +98,6 @@ contract MarketplaceController {
   {
     Model(modelAddress).setOrderSettlementControllerAddress(addr);
   }  
-
-  function setHashTagControllerAddress(address addr) adminOnly external
-  {
-    Model(modelAddress).setHashTagControllerAddress(addr);
-  } 
 
   // set order escrow class contract address
   function setOrderEscrowAddress(address addr) adminOnly external

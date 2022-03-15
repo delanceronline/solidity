@@ -9,7 +9,7 @@ import './SharedStructs.sol';
 /*
 ------------------------------------------------------------------------------------
 
-This is the model for the items / products hashtags which is only accessible by the controller.
+This is a customized model for the items / products hashtags which is only accessible by the controller.
 
 ------------------------------------------------------------------------------------
 */
@@ -61,7 +61,7 @@ contract HashTagModel {
       hashTag.hookTo = hashTags[lowerCaseHash].length;
 
       SharedStructs.HashTag storage previousHashTag = hashTags[lowerCaseHash][hashTags[lowerCaseHash].length - 1];
-      previousHashTag.hookBy = hashTags[lowerCaseHash].length;
+      previousHashTag.hookBy = hashTags[lowerCaseHash].length + 1;
     }
 
     hashTags[lowerCaseHash].push(hashTag);

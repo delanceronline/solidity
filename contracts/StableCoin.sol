@@ -61,9 +61,15 @@ contract StableCoin is Context, IERC20, IERC20Metadata {
      * construction.
      */
     constructor() {
+      
+    /*
       _name = "Stable Coin";
       _symbol = "USDC";
       _totalSupply = 1000000 * (uint256(10) ** 6);
+    */
+
+      _name = "Wrapped UST Token";
+      _symbol = "UST";
 
       _balances[msg.sender] = _totalSupply;
     }
