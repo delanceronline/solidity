@@ -145,13 +145,10 @@ contract HashTagModel {
       if(targetHashTag.hookBy > 0)
       {
         // the target tag is not the only one on the chain
-        SharedStructs.HashTag storage backHashTag = tags[targetHashTag.hookBy - 1];
-        backHashTag.hookTo = currentIndex + 1;
+        currentHashTag.hookTo = 0;
+        currentHashTag.hookBy = targetIndex + 1;        
 
-        currentHashTag.hookTo = targetIndex + 1;
-        currentHashTag.hookBy = targetHashTag.hookBy;
-
-        targetHashTag.hookBy = currentIndex + 1;
+        targetHashTag.hookTo = currentIndex + 1;
       }
     }
     else if(targetHashTag.hookBy == 0)
@@ -165,13 +162,13 @@ contract HashTagModel {
     else
     {
       // in the middle of the ordering chain
-      SharedStructs.HashTag storage backHashTag = tags[targetHashTag.hookBy - 1]; 
+      SharedStructs.HashTag storage frontHashTag = tags[targetHashTag.hookTo - 1]; 
 
-      currentHashTag.hookTo = backHashTag.hookTo;
-      currentHashTag.hookBy = targetHashTag.hookBy;
+      currentHashTag.hookTo = targetHashTag.hookTo;
+      currentHashTag.hookBy = targetIndex + 1;
 
-      targetHashTag.hookBy = currentIndex + 1;
-      backHashTag.hookTo = targetHashTag.hookBy;       
+      frontHashTag.hookBy = currentIndex + 1;
+      targetHashTag.hookTo = frontHashTag.hookBy;
     }
   }
 
