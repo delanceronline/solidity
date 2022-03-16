@@ -46,7 +46,7 @@ contract EventModel {
   event onSetItemOfCategory(uint indexed category, uint indexed igi, bytes title, bool isEnabled);
 
   // emitted when item's tag set
-  event onSetItemTag(uint indexed igi, bytes32 indexed lowerCaseHash, bytes32 indexed originalHash, bytes tag, bool isEnabled);
+  event onSetItemTag(uint indexed igi, bytes indexed lowerCaseHash, bytes indexed originalHash, bytes tag, bool isEnabled);
 
   // emitted when a discount to a customer set
   event onAddDiscountToClient(address indexed vendor, address indexed client, uint indexed igi, uint8 discountRate, bytes additional);
@@ -135,7 +135,7 @@ contract EventModel {
 
   }
 
-  function onSetItemTagEmit(uint igi, bytes32 lowerCaseHash, bytes32 originalHash, bytes calldata tag, bool isEnabled) controllerOnly external{
+  function onSetItemTagEmit(uint igi, bytes calldata lowerCaseHash, bytes calldata originalHash, bytes calldata tag, bool isEnabled) controllerOnly external{
 
     emit onSetItemTag(igi, lowerCaseHash, originalHash, tag, isEnabled);
 

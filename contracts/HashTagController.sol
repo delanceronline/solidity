@@ -37,7 +37,7 @@ contract HashTagController {
   }
   
   // set a tag for an item
-  function addHashTag(uint localItemIndex, bytes32 lowerCaseHash, bytes32 originalHash, bytes calldata tag, bool isEnabled) external
+  function addHashTag(uint localItemIndex, bytes calldata lowerCaseHash, bytes calldata originalHash, bytes calldata tag, bool isEnabled) external
   {
     HashTagModel model = HashTagModel(modelAddress);
 
@@ -53,7 +53,7 @@ contract HashTagController {
     EventModel(Model(marketModelAddress).eventModelAddress()).onSetItemTagEmit(igi, lowerCaseHash, originalHash, tag, isEnabled);
   }  
 
-  function enableHashTag(bytes32 lowerCaseHash, uint localItemIndex, bool isEnabled) external
+  function enableHashTag(bytes calldata lowerCaseHash, uint localItemIndex, bool isEnabled) external
   {
     HashTagModel model = HashTagModel(modelAddress);
 
@@ -69,12 +69,12 @@ contract HashTagController {
     EventModel(Model(marketModelAddress).eventModelAddress()).onSetItemTagEmit(igi, lowerCaseHash, '', '', isEnabled);
   }
 
-  function modifyHashTagOrderingPosition(bytes32 lowerCaseHash, uint currentIndex, uint pointToIndex) external
+  function modifyHashTagOrderingPosition(bytes calldata lowerCaseHash, uint currentIndex, uint pointToIndex) external
   {
     HashTagModel(modelAddress).modifyHashTagOrderingPosition(lowerCaseHash, currentIndex, pointToIndex);
   }
 
-  function getHashTags(bytes32 lowerCaseHash) external view returns (SharedStructs.HashTag[] memory)
+  function getHashTags(bytes calldata lowerCaseHash) external view returns (SharedStructs.HashTag[] memory)
   {
     return HashTagModel(modelAddress).getHashTags(lowerCaseHash);
   }
@@ -82,6 +82,32 @@ contract HashTagController {
   function getItemHashTags(uint igi) external view returns (bytes[] memory)
   {
     return HashTagModel(modelAddress).getItemHashTags(igi);
+  }
+
+  function getOrderedGlobalItemIndicesByHashTag(bytes calldata lowerCaseHash, uint limit) external view returns (uint[] memory)
+  {
+    HashTagModel model = HashTagModel(modelAddress);
+
+    uint[] memory itemIndices = new uint[](limit);
+
+    SharedStructs.HashTag[] memory hashTags = model.getHashTags(lowerCaseHash);    
+    uint pushCount = 0;
+
+    if(hashTags.length > 0)
+    {
+      uint headIndex = model.getHeadIndexOfHashTags(lowerCaseHash);
+
+      uint currentIndex = headIndex + 1;
+      while(currentIndex > 0 && pushCount < limit)
+      {
+        itemIndices[pushCount] = hashTags[currentIndex - 1].igi;
+        pushCount++;
+
+        currentIndex = hashTags[currentIndex - 1].hookBy;
+      }
+    }
+
+    return itemIndices;
   }
 
 }

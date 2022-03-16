@@ -18,8 +18,7 @@ contract HashTagModel {
 
   using SafeMath for uint256;
 
-  address public modelAddress;
-  mapping (uint => bytes[]) public itemIndexHashTagsMap;
+  address public modelAddress;  
 
   // controller only modifier
   modifier controllerOnly()
@@ -37,7 +36,10 @@ contract HashTagModel {
   }
 
   // hash tags for items
-  mapping (bytes32 => SharedStructs.HashTag[]) public hashTags;
+  mapping (bytes => SharedStructs.HashTag[]) public hashTags;
+  mapping (bytes => uint) public hashTagsHeadIndices;
+
+  mapping (uint => bytes[]) public itemIndexHashTagsMap;
 
   constructor(address addr)
   {
@@ -48,7 +50,7 @@ contract HashTagModel {
   // Data access
   // ------------------------------------------------------------------------------------  
 
-  function addHashTag(bytes32 lowerCaseHash, uint igi, bytes calldata tag, bool isEnabled) external controllerOnly
+  function addHashTag(bytes calldata lowerCaseHash, uint igi, bytes calldata tag, bool isEnabled) external controllerOnly
   {
     SharedStructs.HashTag memory hashTag;
     hashTag.igi = igi;
@@ -68,7 +70,7 @@ contract HashTagModel {
     itemIndexHashTagsMap[igi].push(tag);
   }
 
-  function setHashTag(uint index, bytes32 lowerCaseHash, uint igi, bool isEnabled, uint hookTo, uint hookBy) external controllerOnly
+  function setHashTag(uint index, bytes calldata lowerCaseHash, uint igi, bool isEnabled, uint hookTo, uint hookBy) external controllerOnly
   {
     SharedStructs.HashTag storage hashTag = hashTags[lowerCaseHash][index];
     hashTag.igi = igi;
@@ -77,7 +79,7 @@ contract HashTagModel {
     hashTag.hookBy = hookBy;
   }
 
-  function enableHashTag(bytes32 lowerCaseHash, uint igi, bool isEnabled) external controllerOnly
+  function enableHashTag(bytes calldata lowerCaseHash, uint igi, bool isEnabled) external controllerOnly
   {
     SharedStructs.HashTag[] storage tags = hashTags[lowerCaseHash];
 
@@ -91,7 +93,7 @@ contract HashTagModel {
     }
   }
 
-  function detachHashTagFromOrderingChain(bytes32 lowerCaseHash, uint currentIndex) internal
+  function detachHashTagFromOrderingChain(bytes calldata lowerCaseHash, uint currentIndex) internal
   {
     SharedStructs.HashTag[] storage tags = hashTags[lowerCaseHash];
     SharedStructs.HashTag storage currentHashTag = tags[currentIndex];
@@ -132,7 +134,7 @@ contract HashTagModel {
 
   }
 
-  function appendHashTagIntoOrderingChain(bytes32 lowerCaseHash, uint currentIndex, uint targetIndex) internal
+  function appendHashTagIntoOrderingChain(bytes calldata lowerCaseHash, uint currentIndex, uint targetIndex) internal
   {
     SharedStructs.HashTag[] storage tags = hashTags[lowerCaseHash];
     SharedStructs.HashTag storage currentHashTag = tags[currentIndex];
@@ -141,15 +143,12 @@ contract HashTagModel {
     if(targetHashTag.hookTo == 0)
     {
       // the target tag is the first one on the ordering chain
+      currentHashTag.hookTo = 0;
+      currentHashTag.hookBy = targetIndex + 1;        
 
-      if(targetHashTag.hookBy > 0)
-      {
-        // the target tag is not the only one on the chain
-        currentHashTag.hookTo = 0;
-        currentHashTag.hookBy = targetIndex + 1;        
+      targetHashTag.hookTo = currentIndex + 1;
 
-        targetHashTag.hookTo = currentIndex + 1;
-      }
+      hashTagsHeadIndices[lowerCaseHash] = currentIndex;
     }
     else if(targetHashTag.hookBy == 0)
     {
@@ -173,13 +172,13 @@ contract HashTagModel {
   }
 
   // currentIndex and hookToIndex are zero based
-  function modifyHashTagOrderingPosition(bytes32 lowerCaseHash, uint currentIndex, uint pointToIndex) external controllerOnly
+  function modifyHashTagOrderingPosition(bytes calldata lowerCaseHash, uint currentIndex, uint pointToIndex) external controllerOnly
   {
     detachHashTagFromOrderingChain(lowerCaseHash, currentIndex);
     appendHashTagIntoOrderingChain(lowerCaseHash, currentIndex, pointToIndex);
   }
 
-  function getHashTags(bytes32 lowerCaseHash) external view controllerOnly returns (SharedStructs.HashTag[] memory)
+  function getHashTags(bytes calldata lowerCaseHash) external view controllerOnly returns (SharedStructs.HashTag[] memory)
   {
     return hashTags[lowerCaseHash];
   }
@@ -187,5 +186,10 @@ contract HashTagModel {
   function getItemHashTags(uint igi) external view controllerOnly returns (bytes[] memory)
   {
     return itemIndexHashTagsMap[igi];
+  }
+
+  function getHeadIndexOfHashTags(bytes calldata lowerCaseHash) external view controllerOnly returns (uint)
+  {
+    return hashTagsHeadIndices[lowerCaseHash];
   }
 }
