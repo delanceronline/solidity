@@ -52,6 +52,21 @@ contract HashTagModel {
 
   function addHashTag(bytes calldata lowerCaseHash, uint igi, bytes calldata tag, bool isEnabled) external controllerOnly
   {
+    require(lowerCaseHash.length > 0, 'lowerCaseHash must be non-empty');
+    require(tag.length > 0, 'tag must be non-empty');
+
+    bool bFound = false;
+    for(uint i = 0; i < itemIndexHashTagsMap[igi].length; i++)
+    {
+      if(keccak256(itemIndexHashTagsMap[igi][i]) == keccak256(lowerCaseHash))
+      {
+        bFound = true;
+        break;
+      }
+    }
+
+    require(!bFound, 'hashtag already exists');
+
     SharedStructs.HashTag memory hashTag;
     hashTag.igi = igi;
     hashTag.tag = tag;
@@ -67,7 +82,7 @@ contract HashTagModel {
     }
 
     hashTags[lowerCaseHash].push(hashTag);
-    itemIndexHashTagsMap[igi].push(tag);
+    itemIndexHashTagsMap[igi].push(lowerCaseHash);
   }
 
   function setHashTag(uint index, bytes calldata lowerCaseHash, uint igi, bool isEnabled, uint hookTo, uint hookBy) external controllerOnly
@@ -87,7 +102,32 @@ contract HashTagModel {
     {
       if(igi == tags[i].igi)
       {
-        tags[i].isEnabled = isEnabled;
+        if(tags[i].isEnabled != isEnabled)
+        {
+          bytes[] storage tagList = itemIndexHashTagsMap[igi];
+          for(uint j = 0; j < tagList.length; j++)
+          {
+            if(keccak256(tagList[j]) == keccak256(lowerCaseHash))
+            {
+              if(tags[i].isEnabled)
+              {
+                // remove tag from itemIndexHashTagsMap[igi]
+                tagList[j] = tagList[tagList.length - 1];
+                tagList.pop();
+              }
+              else
+              {
+                // add tag to itemIndexHashTagsMap[igi]
+                tagList.push(tags[i].tag);
+              }
+
+              break;
+            }
+          }
+
+          tags[i].isEnabled = isEnabled;          
+        }
+
         break;
       }
     }

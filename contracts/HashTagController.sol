@@ -100,8 +100,11 @@ contract HashTagController {
       uint currentIndex = headIndex + 1;
       while(currentIndex > 0 && pushCount < limit)
       {
-        itemIndices[pushCount] = hashTags[currentIndex - 1].igi;
-        pushCount++;
+        if(hashTags[currentIndex - 1].isEnabled)
+        {
+          itemIndices[pushCount] = hashTags[currentIndex - 1].igi;
+          pushCount++;        
+        }
 
         currentIndex = hashTags[currentIndex - 1].hookBy;
       }
