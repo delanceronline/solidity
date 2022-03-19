@@ -100,34 +100,30 @@ contract HashTagModel {
 
     for(uint i = 0; i < tags.length; i++)
     {
-      if(igi == tags[i].igi)
+      if(igi == tags[i].igi && tags[i].isEnabled != isEnabled)
       {
-        if(tags[i].isEnabled != isEnabled)
+        bytes[] storage tagList = itemIndexHashTagsMap[igi];
+        for(uint j = 0; j < tagList.length; j++)
         {
-          bytes[] storage tagList = itemIndexHashTagsMap[igi];
-          for(uint j = 0; j < tagList.length; j++)
+          if(keccak256(tagList[j]) == keccak256(lowerCaseHash))
           {
-            if(keccak256(tagList[j]) == keccak256(lowerCaseHash))
+            if(tags[i].isEnabled)
             {
-              if(tags[i].isEnabled)
-              {
-                // remove tag from itemIndexHashTagsMap[igi]
-                tagList[j] = tagList[tagList.length - 1];
-                tagList.pop();
-              }
-              else
-              {
-                // add tag to itemIndexHashTagsMap[igi]
-                tagList.push(tags[i].tag);
-              }
-
-              break;
+              // remove tag from itemIndexHashTagsMap[igi]
+              tagList[j] = tagList[tagList.length - 1];
+              tagList.pop();
             }
-          }
+            else
+            {
+              // add tag to itemIndexHashTagsMap[igi]
+              tagList.push(tags[i].tag);
+            }
 
-          tags[i].isEnabled = isEnabled;          
+            break;
+          }
         }
 
+        tags[i].isEnabled = isEnabled;
         break;
       }
     }
